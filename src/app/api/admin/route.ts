@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLeads, getBriefs, updateLeadStatus, updateBriefStatus } from '@/lib/db';
+import { getLeadsAsync, getBriefsAsync, updateLeadStatusAsync, updateBriefStatusAsync } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const leads = getLeads();
-    const briefs = getBriefs();
+    const leads = await getLeadsAsync();
+    const briefs = await getBriefsAsync();
 
     const stats = {
       totalLeads: leads.length,
@@ -17,7 +17,12 @@ export async function GET() {
       newBriefs: briefs.filter(b => b.status === 'new').length,
     };
 
-    return NextResponse.json({ success: true, stats, leads, briefs });
+    return NextResponse.json({ success: true, stats, leads, briefs }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+      },
+    });
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to fetch admin stats' }, { status: 500 });
   }
@@ -29,12 +34,12 @@ export async function POST(req: NextRequest) {
     const { action, id, status, notes } = body;
 
     if (action === 'update_lead_status') {
-      const ok = updateLeadStatus(id, status, notes);
+      const ok = await updateLeadStatusAsync(id, status, notes);
       return NextResponse.json({ success: ok });
     }
 
     if (action === 'update_brief_status') {
-      const ok = updateBriefStatus(id, status);
+      const ok = await updateBriefStatusAsync(id, status);
       return NextResponse.json({ success: ok });
     }
 

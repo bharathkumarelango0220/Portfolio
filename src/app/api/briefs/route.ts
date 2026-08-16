@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getBriefs, saveBrief, logAnalytics } from '@/lib/db';
+import { getBriefsAsync, saveBriefAsync, logAnalytics } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const briefs = getBriefs();
-    return NextResponse.json({ success: true, briefs });
+    const briefs = await getBriefsAsync();
+    return NextResponse.json({ success: true, briefs }, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+      },
+    });
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to fetch project briefs' }, { status: 500 });
   }
@@ -41,7 +45,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newBrief = saveBrief({
+    const newBrief = await saveBriefAsync({
       businessName,
       yourName,
       email,
