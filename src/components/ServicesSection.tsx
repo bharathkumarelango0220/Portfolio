@@ -93,7 +93,7 @@ export function ServicesSection() {
       subtitle: 'Dynamic web applications with interactive tools, APIs, and databases.',
       badge: 'Custom Architecture',
       description:
-        'From custom travel companions like Munnar Tools to interactive project estimators, client dashboards, and cloud databases, we build scalable software tailored to your exact business workflow.',
+        'From custom travel companions like Trip Tools to interactive project estimators, client dashboards, and cloud databases, we build scalable software tailored to your exact business workflow.',
       points: [
         'Custom RESTful APIs & database integrations (SQLite, PostgreSQL, Firestore)',
         'Interactive client portals, admin dashboards & lead managers',

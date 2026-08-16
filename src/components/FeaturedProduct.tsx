@@ -9,10 +9,7 @@ import {
   FileText, 
   Smartphone, 
   ExternalLink, 
-  CheckCircle, 
-  Sparkles, 
   Layers, 
-  ShieldCheck,
   Eye,
   Maximize2
 } from 'lucide-react';
@@ -24,7 +21,7 @@ export function FeaturedProduct() {
     {
       icon: MapPin,
       title: 'GPS Google Maps Navigation',
-      description: 'Instant 1-tap route navigation to top Munnar destinations including Top Station, Tea Museum, and Mattupetty.',
+      description: 'Instant 1-tap route navigation to top tourist destinations, viewpoints, and attractions with live distance calculation.',
       badge: 'Interactive Travel',
     },
     {
@@ -64,9 +61,9 @@ export function FeaturedProduct() {
           </div>
 
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Munnar Explorer &amp;{' '}
+            Trip Tools —{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-primary bg-clip-text text-transparent">
-              Trip Expense Tracker
+              Travel Companion &amp; Expense Tracker
             </span>
           </h2>
 
@@ -97,11 +94,11 @@ export function FeaturedProduct() {
               </div>
 
               <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-                The Ultimate Munnar Travel Companion
+                The Ultimate Trip Companion &amp; Budget Manager
               </h3>
 
               <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-                Engineered from ground up to solve real traveler pain points in Kerala&rsquo;s hill station:
+                Engineered from ground up to solve real traveler pain points:
                 navigating scenic destinations without getting lost, tracking shared group expenses in real-time, 
                 and downloading comprehensive summary PDF vouchers.
               </p>
@@ -130,7 +127,7 @@ export function FeaturedProduct() {
               {/* Product CTAs */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-4 border-t border-border/60">
                 <a
-                  href="https://munnartools.vercel.app/"
+                  href="https://triptools.vercel.app/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 hover:shadow-xl hover:shadow-emerald-600/40 hover:-translate-y-0.5 active:translate-y-0 transition-all text-center"
@@ -140,7 +137,7 @@ export function FeaturedProduct() {
                 </a>
 
                 <Link
-                  href="/products/munnar-tools"
+                  href="/products/trip-tools"
                   className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-card hover:bg-secondary border border-border text-foreground font-semibold text-sm transition-all text-center"
                 >
                   <span>View Product Architecture</span>
@@ -170,10 +167,10 @@ export function FeaturedProduct() {
                     <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
                   </div>
                   <div className="flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-800/80 text-[11px] font-mono text-slate-300">
-                    <span>https://munnartools.vercel.app</span>
+                    <span>https://triptools.vercel.app</span>
                   </div>
                   <a 
-                    href="https://munnartools.vercel.app/" 
+                    href="https://triptools.vercel.app/" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="hover:text-white p-1"
@@ -187,8 +184,8 @@ export function FeaturedProduct() {
                 {showLivePreview ? (
                   <div className="h-[480px] w-full bg-slate-950 relative">
                     <iframe
-                      src="https://munnartools.vercel.app/"
-                      title="Munnar Tools Live Preview"
+                      src="https://triptools.vercel.app/"
+                      title="Trip Tools Live Preview"
                       className="w-full h-full border-none"
                       sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
                       loading="lazy"
@@ -201,7 +198,7 @@ export function FeaturedProduct() {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 text-emerald-400 font-bold text-lg font-serif">
                           <span>🌿</span>
-                          <span>Munnar Explorer</span>
+                          <span>Trip Tools Companion</span>
                         </div>
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                           v1.4 Production
@@ -218,7 +215,7 @@ export function FeaturedProduct() {
                           <span className="text-xs font-bold text-slate-300 bg-slate-700 px-2 py-0.5 rounded">1,880m MSL</span>
                         </div>
                         <div className="text-xs text-slate-300 flex items-center gap-3">
-                          <span className="flex items-center gap-1">📍 32 km from Munnar Town</span>
+                          <span className="flex items-center gap-1">📍 Destination GPS Route</span>
                           <span className="flex items-center gap-1">⏱️ Open 6:00 AM - 6:00 PM</span>
                         </div>
                         <div className="flex items-center gap-2 pt-1">
@@ -258,7 +255,7 @@ export function FeaturedProduct() {
                       </button>
                       
                       <a
-                        href="https://munnartools.vercel.app/"
+                        href="https://triptools.vercel.app/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs font-semibold text-slate-300 hover:text-white flex items-center gap-1"

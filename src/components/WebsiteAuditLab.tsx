@@ -51,7 +51,7 @@ export function WebsiteAuditLab() {
   ]);
 
   const presetWebsites = [
-    { label: '🌿 Munnar Tools (Live)', url: 'https://munnartools.vercel.app' },
+    { label: '🌿 Trip Tools (Live)', url: 'https://triptools.vercel.app' },
     { label: '⚡ Next.js Portal', url: 'https://nextjs.org' },
     { label: '🌴 Kerala Tourism', url: 'https://www.keralatourism.org' },
     { label: '🚀 Vercel Platform', url: 'https://vercel.com' },
@@ -60,7 +60,7 @@ export function WebsiteAuditLab() {
   const handleRunAudit = (targetUrl?: string) => {
     let rawUrl = (targetUrl || auditUrl).trim();
     if (!rawUrl) {
-      rawUrl = 'https://munnartools.vercel.app';
+      rawUrl = 'https://triptools.vercel.app';
       setAuditUrl(rawUrl);
     }
     
@@ -93,11 +93,11 @@ export function WebsiteAuditLab() {
         setIsScanning(false);
 
         // Generate tailored contextual audit response
-        const isMunnar = formattedUrl.includes('munnartools');
+        const isTripTools = formattedUrl.includes('triptools') || formattedUrl.includes('munnartools');
         const isNextOrVercel = formattedUrl.includes('nextjs.org') || formattedUrl.includes('vercel.com');
         const isKeralaTourism = formattedUrl.includes('keralatourism');
 
-        if (isMunnar) {
+        if (isTripTools) {
           setAuditResult({
             overallScore: 99,
             grade: 'A+ (Exceptional)',
@@ -146,7 +146,7 @@ export function WebsiteAuditLab() {
               { type: 'warning', text: 'Navigation menu items are tightly packed on mobile touchscreens' },
               { type: 'warning', text: 'No offline PWA capabilities or modern GPS routing engine' },
             ],
-            recommendation: 'Needs complete Next.js fullstack revamp (similar to Munnar Tools) for instant mobile navigation and trip tracking.',
+            recommendation: 'Needs complete Next.js fullstack revamp (similar to Trip Tools) for instant mobile navigation and trip tracking.',
           });
         } else {
           // General entered user domain
@@ -177,7 +177,7 @@ export function WebsiteAuditLab() {
       id: 'gps-maps',
       name: 'Google Maps GPS Navigation Engine',
       category: 'Interactive Utility',
-      desc: '1-tap tourist destination routing with live distance & hours (as seen in Munnar Tools).',
+      desc: '1-tap tourist destination routing with live distance & hours (as seen in Trip Tools).',
       tag: 'Product Feature',
     },
     {

@@ -33,7 +33,7 @@ export function Navbar() {
 
   const navLinks = [
     { label: 'Services', href: '/#services' },
-    { label: 'Flagship Product', href: '/#featured-product', badge: 'Munnar Tools' },
+    { label: 'Flagship Product', href: '/#featured-product', badge: 'Trip Tools' },
     { label: 'Process', href: '/#process' },
     { label: 'Case Studies', href: '/#case-studies' },
     { label: 'Audit & Tech Lab', href: '/#interactive-lab' },
@@ -162,12 +162,12 @@ export function Navbar() {
 
             <div className="pt-4 border-t border-border/60 flex flex-col gap-2.5">
               <Link
-                href="/products/munnar-tools"
+                href="/products/trip-tools"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-semibold text-sm"
               >
                 <Compass className="w-4 h-4 text-emerald-500" />
-                <span>Explore Munnar Tools Product &rarr;</span>
+                <span>Explore Trip Tools Product &rarr;</span>
               </Link>
               <Link
                 href="/#brief-wizard"

@@ -534,7 +534,7 @@ export function ProjectBriefWizard() {
                       {[
                         'Multi interlinked pages',
                         'Customer response form',
-                        'Custom Web Tool / Calculator (like Munnar Tools)',
+                        'Custom Web Tool / Calculator (like Trip Tools)',
                         'SEO Acceleration & Analytics',
                         'Interactive Portfolio / Case Studies',
                         'Dark / Light Mode Switcher',

@@ -22,7 +22,7 @@ export default function HomePage() {
         {/* 1. High-Converting Hero */}
         <Hero />
 
-        {/* 2. Flagship Product Spotlight: Munnar Tools */}
+        {/* 2. Flagship Product Spotlight: Trip Tools */}
         <FeaturedProduct />
 
         {/* 3. Core Services Breakdown */}

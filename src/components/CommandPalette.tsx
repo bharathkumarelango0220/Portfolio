@@ -29,16 +29,16 @@ export function CommandPalette({ isOpen, onClose }: { isOpen: boolean; onClose: 
 
   const items: CommandItem[] = [
     {
-      title: 'Flagship Product: Munnar Explorer & Expense Tracker',
+      title: 'Flagship Product: Trip Tools — Travel Companion & Expense Tracker',
       category: 'Featured Product',
       icon: Compass,
-      href: '/products/munnar-tools',
+      href: '/products/trip-tools',
     },
     {
-      title: 'Launch Live Munnar Tools (munnartools.vercel.app)',
+      title: 'Launch Live Trip Tools (triptools.vercel.app)',
       category: 'Featured Product',
       icon: ExternalLink,
-      href: 'https://munnartools.vercel.app/',
+      href: 'https://triptools.vercel.app/',
       external: true,
     },
     {

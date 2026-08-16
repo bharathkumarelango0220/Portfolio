@@ -63,11 +63,11 @@ export function Hero() {
               </Link>
               
               <Link
-                href="/products/munnar-tools"
+                href="/products/trip-tools"
                 className="inline-flex items-center justify-center gap-2.5 px-6 py-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-semibold text-sm transition-all text-center"
               >
                 <Compass className="w-4 h-4 text-emerald-500" />
-                <span>Featured Product: Munnar Tools &rarr;</span>
+                <span>Featured Product: Trip Tools &rarr;</span>
               </Link>
             </div>
 

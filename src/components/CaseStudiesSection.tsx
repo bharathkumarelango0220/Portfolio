@@ -8,8 +8,7 @@ import {
   Layers, 
   Sparkles, 
   ArrowUpRight, 
-  Globe,
-  Plus
+  Globe
 } from 'lucide-react';
 import { ShowcaseProject } from '@/lib/types';
 
@@ -17,9 +16,9 @@ export function CaseStudiesSection() {
   const [filter, setFilter] = useState<string>('all');
   const [projects, setProjects] = useState<ShowcaseProject[]>([
     {
-      id: 'proj-munnar-tools',
-      title: 'Munnar Travel Companion & Trip Expense Tracker',
-      url: 'https://munnartools.vercel.app/',
+      id: 'proj-trip-tools',
+      title: 'Trip Tools — Travel Companion & Trip Expense Tracker',
+      url: 'https://triptools.vercel.app/',
       category: 'Web App',
       description: 'Real-time smart travel planner with split expenses, offline mode, and interactive destination guide.',
       impact: '100/100 Core Web Vitals, 2.4k Monthly Users',
@@ -30,7 +29,7 @@ export function CaseStudiesSection() {
     {
       id: 'proj-zenith',
       title: 'Zenith Health & Wellness Platform',
-      url: 'https://munnartools.vercel.app/',
+      url: 'https://triptools.vercel.app/',
       category: 'Web App',
       description: 'Modern patient booking & medical services portal with instant appointment sync and HIPAA-compliant records.',
       impact: '0.6s Booking Latency, +52% Retention',
@@ -41,7 +40,7 @@ export function CaseStudiesSection() {
     {
       id: 'proj-venturescale',
       title: 'VentureScale Enterprise SaaS Platform',
-      url: 'https://munnartools.vercel.app/',
+      url: 'https://triptools.vercel.app/',
       category: 'SaaS',
       description: 'Fullstack enterprise telemetry dashboard providing real-time data visualizers and automated PDF reporting.',
       impact: '<50ms Data Latency, +140% DAU',
@@ -52,7 +51,7 @@ export function CaseStudiesSection() {
     {
       id: 'proj-swiftcart',
       title: 'SwiftCart Headless Storefront',
-      url: 'https://munnartools.vercel.app/',
+      url: 'https://triptools.vercel.app/',
       category: 'E-Commerce',
       description: 'Zero-friction modern shopping storefront with instant 1-tap checkout and sub-second page loads.',
       impact: '99 Speed Score, -62% Dropoff',
@@ -69,7 +68,6 @@ export function CaseStudiesSection() {
         const res = await fetch(`/api/projects?_t=${Date.now()}`);
         const data = await res.json();
         if (data.success && Array.isArray(data.projects) && data.projects.length > 0) {
-          // Merge dynamic projects with default list
           setProjects(data.projects);
         }
       } catch {
@@ -143,7 +141,7 @@ export function CaseStudiesSection() {
         {/* Portfolio Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {filteredProjects.map((project) => {
-            const isMunnar = project.id.includes('munnar');
+            const isTripTools = project.id.includes('trip') || project.id.includes('munnar');
             return (
               <div
                 key={project.id}
@@ -201,13 +199,13 @@ export function CaseStudiesSection() {
 
                 {/* Bottom Actions */}
                 <div className="pt-5 border-t border-border/60 flex items-center justify-between gap-3">
-                  {isMunnar ? (
+                  {isTripTools ? (
                     <Link
-                      href="/products/munnar-tools"
+                      href="/products/trip-tools"
                       className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
                     >
                       <Compass className="w-4 h-4" />
-                      <span>View Dedicated Munnar Case Study &rarr;</span>
+                      <span>View Dedicated Trip Tools Case Study &rarr;</span>
                     </Link>
                   ) : (
                     <span className="text-xs text-muted-foreground flex items-center gap-1">

@@ -33,11 +33,11 @@ export function Footer() {
 
             <div className="pt-2">
               <Link
-                href="/products/munnar-tools"
+                href="/products/trip-tools"
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition-colors"
               >
                 <Compass className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Featured Product: Munnar Tools</span>
+                <span>Featured Product: Trip Tools</span>
               </Link>
             </div>
           </div>
@@ -47,7 +47,7 @@ export function Footer() {
             <div className="text-xs font-bold uppercase tracking-wider text-foreground">Platform Links</div>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link href="/#services" className="hover:text-primary transition-colors">Core Services</Link></li>
-              <li><Link href="/products/munnar-tools" className="hover:text-primary transition-colors">Munnar Tools Explorer</Link></li>
+              <li><Link href="/products/trip-tools" className="hover:text-primary transition-colors">Trip Tools Companion</Link></li>
               <li><Link href="/#process" className="hover:text-primary transition-colors">5-Step Process</Link></li>
               <li><Link href="/#case-studies" className="hover:text-primary transition-colors">Case Studies</Link></li>
               <li><Link href="/#interactive-lab" className="hover:text-primary transition-colors">Audit &amp; Tech Lab</Link></li>

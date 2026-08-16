@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     'Bharathkumar E',
     'Fullstack Developer',
     'Web Design Studio',
-    'Munnar Tools',
+    'Trip Tools',
     'High Converting Websites',
     'Next.js Fullstack',
   ],

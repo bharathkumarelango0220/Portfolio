@@ -18,9 +18,9 @@ export function MobileDock() {
           <span className="text-[10px] font-medium mt-0.5">Home</span>
         </Link>
 
-        {/* Munnar Tools Link */}
+        {/* Trip Tools Link */}
         <Link
-          href="/products/munnar-tools"
+          href="/products/trip-tools"
           className="flex flex-col items-center justify-center p-2 rounded-xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 active:scale-95 transition-all group"
         >
           <Compass className="w-5 h-5 group-hover:scale-110 transition-transform" />
