@@ -1,0 +1,22 @@
+[
+  {
+    "id": "lead-1786859645946-1ap48",
+    "name": "Test Visitor",
+    "email": "test@example.com",
+    "phone": "+91 9999999999",
+    "source": "Website Quick Contact",
+    "notes": "Testing lead flow",
+    "status": "new",
+    "createdAt": "2026-08-16T05:54:05.946Z"
+  },
+  {
+    "id": "lead-demo-1",
+    "name": "Alex Vance",
+    "email": "alex.vance@techcorp.io",
+    "phone": "+91 9876543210",
+    "source": "Website Contact Form",
+    "status": "new",
+    "createdAt": "2026-08-14T05:54:05.942Z",
+    "notes": "Interested in full agency redesign + custom web app"
+  }
+]

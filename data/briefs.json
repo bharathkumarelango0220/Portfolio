@@ -1,0 +1,66 @@
+[
+  {
+    "id": "brief-1786860370741-vl06u",
+    "businessName": "Apexassure",
+    "yourName": "BHARATHKUMAR",
+    "email": "bk264165@gmail.com",
+    "phone": "8220802736",
+    "description": "na",
+    "goals": [
+      "Promote business",
+      "Sell products",
+      "Automate client workflows",
+      "Generate qualified leads",
+      "Build a brand",
+      "Showcase portfolio / tools"
+    ],
+    "audienceGender": "Men",
+    "audienceAge": "18",
+    "designLook": "Modern & Minimalist",
+    "primaryColor": "gfnf",
+    "secondaryColor": "fnfgn",
+    "colorTheme": "Light & Dark Adaptive",
+    "keyFeatures": [
+      "Multi interlinked pages",
+      "Customer response form",
+      "SEO Acceleration",
+      "Custom Web Tool / Calculator (like Munnar Tools)",
+      "WhatsApp & Direct Call Floating Dock",
+      "Interactive Portfolio / Case Studies",
+      "SEO Acceleration & Analytics",
+      "Dark / Light Mode Switcher",
+      "PDF Export / Document Generator"
+    ],
+    "hasContent": "Yes",
+    "hasDomain": "No (Need Setup Guidance)",
+    "status": "new",
+    "createdAt": "2026-08-16T06:06:10.741Z"
+  },
+  {
+    "id": "brief-demo-1",
+    "businessName": "VentureScale Analytics",
+    "yourName": "Samantha Green",
+    "email": "samantha@venturescale.co",
+    "phone": "+91 9845123456",
+    "description": "Next-gen analytics platform for enterprise B2B SaaS teams.",
+    "goals": [
+      "Build a brand",
+      "Promote business",
+      "Sell products"
+    ],
+    "audienceGender": "All",
+    "audienceAge": "24-50",
+    "designLook": "Modern & minimalist",
+    "primaryColor": "#2563eb (Royal Blue)",
+    "secondaryColor": "#0f172a (Slate Dark)",
+    "colorTheme": "Dark theme",
+    "keyFeatures": [
+      "Multi interlinked pages",
+      "Customer response form"
+    ],
+    "hasContent": "Yes",
+    "hasDomain": "Yes",
+    "status": "reviewed",
+    "createdAt": "2026-08-15T05:54:05.944Z"
+  }
+]
