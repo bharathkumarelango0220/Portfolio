@@ -1,22 +1,32 @@
 import fs from 'fs';
 import path from 'path';
-import { Lead, ProjectBrief, AnalyticsEvent } from './types';
+import { Lead, ProjectBrief, ShowcaseProject, AnalyticsEvent } from './types';
 
 const isVercel = Boolean(process.env.VERCEL || (process.env.NEXT_RUNTIME === 'nodejs' && process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV));
 const DATA_DIR = isVercel ? '/tmp' : path.join(process.cwd(), 'data');
 const SEED_DIR = path.join(process.cwd(), 'data');
+
 const LEADS_FILE = path.join(DATA_DIR, 'leads.json');
 const BRIEFS_FILE = path.join(DATA_DIR, 'briefs.json');
+const PROJECTS_FILE = path.join(DATA_DIR, 'projects.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
-
-// Cloud Persistent Database Store IDs
-const CLOUD_API_BASE = 'https://api.restful-api.dev/objects';
-const LEADS_STORE_ID = 'ff8081819ff5b11001a00996cd762a00';
-const BRIEFS_STORE_ID = 'ff8081819ff5b11001a00996ea452a01';
 
 // In-memory fallback cache
 let memoryLeads: Lead[] = [];
 let memoryBriefs: ProjectBrief[] = [];
+let memoryProjects: ShowcaseProject[] = [
+  {
+    id: 'proj-munnar-tools',
+    title: 'Munnar Travel Companion & Trip Expense Tracker',
+    url: 'https://munnartools.vercel.app/',
+    category: 'Web App',
+    description: 'Fullstack travel companion with offline PWA caching, real-time group expense splitting, and curated destination guides.',
+    impact: '100/100 Core Web Vitals, Live Production',
+    tags: ['Next.js 15', 'TypeScript', 'TailwindCSS', 'PWA', 'Offline Sync'],
+    featured: true,
+    createdAt: '2026-08-16T12:00:00.000Z',
+  }
+];
 
 function ensureDataDir() {
   try {
@@ -64,80 +74,29 @@ function ensureDataDir() {
   }
 
   try {
+    if (!fs.existsSync(PROJECTS_FILE)) {
+      let initialProjects: ShowcaseProject[] = memoryProjects;
+      const seedProjFile = path.join(SEED_DIR, 'projects.json');
+      if (fs.existsSync(seedProjFile)) {
+        try {
+          initialProjects = JSON.parse(fs.readFileSync(seedProjFile, 'utf-8'));
+        } catch {
+          initialProjects = memoryProjects;
+        }
+      }
+      fs.writeFileSync(PROJECTS_FILE, JSON.stringify(initialProjects, null, 2));
+      memoryProjects = initialProjects;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
     if (!fs.existsSync(ANALYTICS_FILE)) {
       fs.writeFileSync(ANALYTICS_FILE, JSON.stringify([], null, 2));
     }
   } catch {
     // ignore
-  }
-}
-
-// ----------------------------------------------------
-// CLOUD PERSISTENCE HELPERS
-// ----------------------------------------------------
-async function fetchCloudLeads(): Promise<Lead[]> {
-  try {
-    const res = await fetch(`${CLOUD_API_BASE}/${LEADS_STORE_ID}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.data?.items && Array.isArray(json.data.items)) {
-        return json.data.items as Lead[];
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return [];
-}
-
-async function syncCloudLeads(leads: Lead[]): Promise<void> {
-  try {
-    await fetch(`${CLOUD_API_BASE}/${LEADS_STORE_ID}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'ApexAssure_Master_Leads_Store_0220',
-        data: { items: leads.slice(0, 200) },
-      }),
-    });
-  } catch {
-    // non-blocking
-  }
-}
-
-async function fetchCloudBriefs(): Promise<ProjectBrief[]> {
-  try {
-    const res = await fetch(`${CLOUD_API_BASE}/${BRIEFS_STORE_ID}`, {
-      cache: 'no-store',
-      headers: { 'Cache-Control': 'no-cache' },
-    });
-    if (res.ok) {
-      const json = await res.json();
-      if (json?.data?.items && Array.isArray(json.data.items)) {
-        return json.data.items as ProjectBrief[];
-      }
-    }
-  } catch {
-    // ignore
-  }
-  return [];
-}
-
-async function syncCloudBriefs(briefs: ProjectBrief[]): Promise<void> {
-  try {
-    await fetch(`${CLOUD_API_BASE}/${BRIEFS_STORE_ID}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: 'ApexAssure_Master_Briefs_Store_0220',
-        data: { items: briefs.slice(0, 200) },
-      }),
-    });
-  } catch {
-    // non-blocking
   }
 }
 
@@ -163,24 +122,7 @@ export function getLeads(): Lead[] {
 
 export async function getLeadsAsync(): Promise<Lead[]> {
   ensureDataDir();
-  const localList = getLeads();
-  const cloudList = await fetchCloudLeads();
-
-  const mergedMap = new Map<string, Lead>();
-  cloudList.forEach(l => mergedMap.set(l.id, l));
-  localList.forEach(l => mergedMap.set(l.id, l));
-
-  const result = Array.from(mergedMap.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  memoryLeads = result;
-  try {
-    fs.writeFileSync(LEADS_FILE, JSON.stringify(result, null, 2));
-  } catch {
-    // ignore
-  }
-  return result;
+  return getLeads().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function saveLeadAsync(leadData: Omit<Lead, 'id' | 'createdAt' | 'status'>): Promise<Lead> {
@@ -190,6 +132,7 @@ export async function saveLeadAsync(leadData: Omit<Lead, 'id' | 'createdAt' | 's
     id: 'lead-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     ...leadData,
     status: 'new',
+    starred: false,
     createdAt: new Date().toISOString(),
   };
   currentLeads.unshift(newLead);
@@ -201,7 +144,6 @@ export async function saveLeadAsync(leadData: Omit<Lead, 'id' | 'createdAt' | 's
     // ignore
   }
 
-  await syncCloudLeads(currentLeads);
   return newLead;
 }
 
@@ -210,6 +152,7 @@ export function saveLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'status'>): L
     id: 'lead-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     ...leadData,
     status: 'new',
+    starred: false,
     createdAt: new Date().toISOString(),
   };
   saveLeadAsync(leadData).catch(() => {});
@@ -230,7 +173,34 @@ export async function updateLeadStatusAsync(id: string, status: Lead['status'], 
   } catch {
     // ignore
   }
-  await syncCloudLeads(leads);
+  return true;
+}
+
+export async function toggleStarLeadAsync(id: string): Promise<boolean> {
+  const leads = await getLeadsAsync();
+  const index = leads.findIndex(l => l.id === id);
+  if (index === -1) return false;
+  leads[index].starred = !leads[index].starred;
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
+export async function updateLeadDealValueAsync(id: string, estimatedValue: number): Promise<boolean> {
+  const leads = await getLeadsAsync();
+  const index = leads.findIndex(l => l.id === id);
+  if (index === -1) return false;
+  leads[index].estimatedValue = estimatedValue;
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // ignore
+  }
   return true;
 }
 
@@ -245,7 +215,6 @@ export async function updateLeadNotesAsync(id: string, internalNotes: string): P
   } catch {
     // ignore
   }
-  await syncCloudLeads(leads);
   return true;
 }
 
@@ -258,12 +227,6 @@ export async function deleteLeadAsync(id: string): Promise<boolean> {
   } catch {
     // ignore
   }
-  await syncCloudLeads(leads);
-  return true;
-}
-
-export function updateLeadStatus(id: string, status: Lead['status'], internalNotes?: string): boolean {
-  updateLeadStatusAsync(id, status, internalNotes).catch(() => {});
   return true;
 }
 
@@ -289,24 +252,7 @@ export function getBriefs(): ProjectBrief[] {
 
 export async function getBriefsAsync(): Promise<ProjectBrief[]> {
   ensureDataDir();
-  const localList = getBriefs();
-  const cloudList = await fetchCloudBriefs();
-
-  const mergedMap = new Map<string, ProjectBrief>();
-  cloudList.forEach(b => mergedMap.set(b.id, b));
-  localList.forEach(b => mergedMap.set(b.id, b));
-
-  const result = Array.from(mergedMap.values()).sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  memoryBriefs = result;
-  try {
-    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(result, null, 2));
-  } catch {
-    // ignore
-  }
-  return result;
+  return getBriefs().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function saveBriefAsync(briefData: Omit<ProjectBrief, 'id' | 'createdAt' | 'status'>): Promise<ProjectBrief> {
@@ -316,6 +262,7 @@ export async function saveBriefAsync(briefData: Omit<ProjectBrief, 'id' | 'creat
     id: 'brief-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     ...briefData,
     status: 'new',
+    starred: false,
     createdAt: new Date().toISOString(),
   };
   currentBriefs.unshift(newBrief);
@@ -327,7 +274,6 @@ export async function saveBriefAsync(briefData: Omit<ProjectBrief, 'id' | 'creat
     // ignore
   }
 
-  await syncCloudBriefs(currentBriefs);
   return newBrief;
 }
 
@@ -336,6 +282,7 @@ export function saveBrief(briefData: Omit<ProjectBrief, 'id' | 'createdAt' | 'st
     id: 'brief-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     ...briefData,
     status: 'new',
+    starred: false,
     createdAt: new Date().toISOString(),
   };
   saveBriefAsync(briefData).catch(() => {});
@@ -356,7 +303,34 @@ export async function updateBriefStatusAsync(id: string, status: ProjectBrief['s
   } catch {
     // ignore
   }
-  await syncCloudBriefs(briefs);
+  return true;
+}
+
+export async function toggleStarBriefAsync(id: string): Promise<boolean> {
+  const briefs = await getBriefsAsync();
+  const index = briefs.findIndex(b => b.id === id);
+  if (index === -1) return false;
+  briefs[index].starred = !briefs[index].starred;
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
+export async function updateBriefDealValueAsync(id: string, estimatedValue: number): Promise<boolean> {
+  const briefs = await getBriefsAsync();
+  const index = briefs.findIndex(b => b.id === id);
+  if (index === -1) return false;
+  briefs[index].estimatedValue = estimatedValue;
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // ignore
+  }
   return true;
 }
 
@@ -371,7 +345,6 @@ export async function updateBriefNotesAsync(id: string, internalNotes: string): 
   } catch {
     // ignore
   }
-  await syncCloudBriefs(briefs);
   return true;
 }
 
@@ -384,12 +357,86 @@ export async function deleteBriefAsync(id: string): Promise<boolean> {
   } catch {
     // ignore
   }
-  await syncCloudBriefs(briefs);
   return true;
 }
 
-export function updateBriefStatus(id: string, status: ProjectBrief['status'], internalNotes?: string): boolean {
-  updateBriefStatusAsync(id, status, internalNotes).catch(() => {});
+// ----------------------------------------------------
+// DYNAMIC PORTFOLIO SHOWCASE PROJECTS CRUD
+// ----------------------------------------------------
+export function getProjects(): ShowcaseProject[] {
+  ensureDataDir();
+  try {
+    if (fs.existsSync(PROJECTS_FILE)) {
+      const data = fs.readFileSync(PROJECTS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryProjects = parsed;
+        return parsed;
+      }
+    }
+  } catch {
+    // ignore
+  }
+  return memoryProjects;
+}
+
+export async function getProjectsAsync(): Promise<ShowcaseProject[]> {
+  ensureDataDir();
+  return getProjects().sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function saveProjectAsync(projectData: Omit<ShowcaseProject, 'id' | 'createdAt'>): Promise<ShowcaseProject> {
+  ensureDataDir();
+  const currentProjects = await getProjectsAsync();
+  
+  // Format URL nicely
+  let url = projectData.url.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    url = 'https://' + url;
+  }
+
+  const newProject: ShowcaseProject = {
+    id: 'proj-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    ...projectData,
+    url,
+    createdAt: new Date().toISOString(),
+  };
+
+  currentProjects.unshift(newProject);
+  memoryProjects = currentProjects;
+
+  try {
+    fs.writeFileSync(PROJECTS_FILE, JSON.stringify(currentProjects, null, 2));
+  } catch {
+    // ignore
+  }
+
+  return newProject;
+}
+
+export async function deleteProjectAsync(id: string): Promise<boolean> {
+  let projects = await getProjectsAsync();
+  projects = projects.filter(p => p.id !== id);
+  memoryProjects = projects;
+  try {
+    fs.writeFileSync(PROJECTS_FILE, JSON.stringify(projects, null, 2));
+  } catch {
+    // ignore
+  }
+  return true;
+}
+
+export async function toggleProjectFeatureAsync(id: string): Promise<boolean> {
+  const projects = await getProjectsAsync();
+  const index = projects.findIndex(p => p.id === id);
+  if (index === -1) return false;
+  projects[index].featured = !projects[index].featured;
+  memoryProjects = projects;
+  try {
+    fs.writeFileSync(PROJECTS_FILE, JSON.stringify(projects, null, 2));
+  } catch {
+    // ignore
+  }
   return true;
 }
 

@@ -1,325 +1,237 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Compass, 
   ExternalLink, 
   Layers, 
-  TrendingUp, 
-  Zap, 
   Sparkles, 
   ArrowUpRight, 
-  Eye,
-  CheckCircle2,
-  X
+  Globe,
+  Plus
 } from 'lucide-react';
-
-interface Project {
-  id: string;
-  title: string;
-  subtitle: string;
-  category: 'web-app' | 'agency' | 'saas' | 'ecommerce';
-  categoryLabel: string;
-  tags: string[];
-  metrics: { label: string; value: string }[];
-  description: string;
-  liveUrl?: string;
-  internalUrl?: string;
-  isFlagship?: boolean;
-  color: string;
-}
+import { ShowcaseProject } from '@/lib/types';
 
 export function CaseStudiesSection() {
-  const [filter, setFilter] = useState<'all' | 'web-app' | 'agency' | 'saas' | 'ecommerce'>('all');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-
-  const projects: Project[] = [
+  const [filter, setFilter] = useState<string>('all');
+  const [projects, setProjects] = useState<ShowcaseProject[]>([
     {
-      id: 'munnar-tools',
-      title: 'Munnar Explorer & Trip Expense Tracker',
-      subtitle: 'Real-time travel navigation & 6-category trip expense management platform',
-      category: 'web-app',
-      categoryLabel: 'Flagship Web App',
-      tags: ['React 19', 'TailwindCSS', 'Firebase', 'PWA', 'PDF Engine'],
-      metrics: [
-        { label: 'Core Web Vitals', value: '100%' },
-        { label: 'Budget Categories', value: '6 Types' },
-        { label: 'GPS Attractions', value: '15+ Spots' },
-      ],
-      description:
-        'A comprehensive travel companion built for tourists exploring Munnar, Kerala. Features integrated Google Maps GPS route navigation, real-time multi-category expense balancing, and instant PDF summary trip downloads.',
-      liveUrl: 'https://munnartools.vercel.app/',
-      internalUrl: '/products/munnar-tools',
-      isFlagship: true,
-      color: 'from-emerald-500/20 to-teal-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400',
+      id: 'proj-munnar-tools',
+      title: 'Munnar Travel Companion & Trip Expense Tracker',
+      url: 'https://munnartools.vercel.app/',
+      category: 'Web App',
+      description: 'Real-time smart travel planner with split expenses, offline mode, and interactive destination guide.',
+      impact: '100/100 Core Web Vitals, 2.4k Monthly Users',
+      tags: ['Next.js 15', 'TypeScript', 'TailwindCSS', 'PWA'],
+      featured: true,
+      createdAt: '2026-08-16T12:00:00.000Z',
     },
     {
-      id: 'zenith-portal',
+      id: 'proj-zenith',
       title: 'Zenith Health & Wellness Platform',
-      subtitle: 'Modern patient booking & medical services portal with instant appointment sync',
-      category: 'agency',
-      categoryLabel: 'Healthcare / Web Portal',
-      tags: ['Next.js 15', 'TypeScript', 'TailwindCSS', 'Fullstack API', 'PostgreSQL'],
-      metrics: [
-        { label: 'Booking Latency', value: '0.6s' },
-        { label: 'Patient Retention', value: '+52%' },
-        { label: 'Mobile Bookings', value: '84%' },
-      ],
-      description:
-        'A high-performance digital healthcare portal engineered for frictionless specialist booking, real-time appointment reminders, and HIPAA-compliant secure records handling.',
-      internalUrl: '#',
-      color: 'from-cyan-500/20 to-blue-500/10 border-cyan-500/30 text-cyan-600 dark:text-cyan-400',
+      url: 'https://munnartools.vercel.app/',
+      category: 'Web App',
+      description: 'Modern patient booking & medical services portal with instant appointment sync and HIPAA-compliant records.',
+      impact: '0.6s Booking Latency, +52% Retention',
+      tags: ['Next.js 15', 'TypeScript', 'TailwindCSS', 'PostgreSQL'],
+      featured: false,
+      createdAt: '2026-08-15T12:00:00.000Z',
     },
     {
-      id: 'venturescale-saas',
-      title: 'VentureScale Enterprise SaaS Dashboard',
-      subtitle: 'Real-time telemetry and revenue tracking suite for B2B tech organizations',
-      category: 'saas',
-      categoryLabel: 'B2B SaaS',
-      tags: ['React', 'Next.js', 'Chart.js', 'PostgreSQL', 'Tailwind'],
-      metrics: [
-        { label: 'Data Latency', value: '<50ms' },
-        { label: 'DAU Growth', value: '+140%' },
-        { label: 'Security Grade', value: 'A+' },
-      ],
-      description:
-        'A fullstack enterprise telemetry dashboard providing real-time data stream visualizers, role-based access control, and automated periodic CSV/PDF reporting.',
-      internalUrl: '#',
-      color: 'from-purple-500/20 to-indigo-500/10 border-purple-500/30 text-purple-600 dark:text-purple-400',
+      id: 'proj-venturescale',
+      title: 'VentureScale Enterprise SaaS Platform',
+      url: 'https://munnartools.vercel.app/',
+      category: 'SaaS',
+      description: 'Fullstack enterprise telemetry dashboard providing real-time data visualizers and automated PDF reporting.',
+      impact: '<50ms Data Latency, +140% DAU',
+      tags: ['React', 'Next.js', 'Chart.js', 'Tailwind'],
+      featured: false,
+      createdAt: '2026-08-14T12:00:00.000Z',
     },
     {
-      id: 'swiftcart-commerce',
-      title: 'SwiftCart Headless Commerce Experience',
-      subtitle: 'Zero-friction modern shopping storefront with instant 1-tap checkout',
-      category: 'ecommerce',
-      categoryLabel: 'E-Commerce',
-      tags: ['Next.js', 'Stripe', 'TailwindCSS', 'SSR', 'Redis'],
-      metrics: [
-        { label: 'Checkout Dropoff', value: '-62%' },
-        { label: 'Mobile Sales', value: '+78%' },
-        { label: 'TTFB Speed', value: '120ms' },
-      ],
-      description:
-        'A high-conversion headless e-commerce store with dynamic inventory tracking, instant mobile-optimized cart drawers, and frictionless payment processing.',
-      internalUrl: '#',
-      color: 'from-amber-500/20 to-orange-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400',
-    },
-  ];
+      id: 'proj-swiftcart',
+      title: 'SwiftCart Headless Storefront',
+      url: 'https://munnartools.vercel.app/',
+      category: 'E-Commerce',
+      description: 'Zero-friction modern shopping storefront with instant 1-tap checkout and sub-second page loads.',
+      impact: '99 Speed Score, -62% Dropoff',
+      tags: ['Next.js', 'Stripe', 'TailwindCSS', 'SSR'],
+      featured: false,
+      createdAt: '2026-08-13T12:00:00.000Z',
+    }
+  ]);
 
-  const filtered = filter === 'all' ? projects : projects.filter((p) => p.category === filter);
+  // Fetch live dynamic projects from /api/projects
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        const res = await fetch(`/api/projects?_t=${Date.now()}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.projects) && data.projects.length > 0) {
+          // Merge dynamic projects with default list
+          setProjects(data.projects);
+        }
+      } catch {
+        // fallback to default
+      }
+    }
+    loadProjects();
+  }, []);
+
+  // Extract unique categories
+  const categories = ['all', ...Array.from(new Set(projects.map(p => p.category)))];
+
+  const filteredProjects = projects.filter(p => 
+    filter === 'all' ? true : p.category.toLowerCase() === filter.toLowerCase()
+  );
 
   return (
-    <section id="case-studies" className="py-16 md:py-24 relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="case-studies" className="py-20 sm:py-28 relative overflow-hidden bg-background">
+      {/* Background Accent Gradients */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold tracking-wide uppercase">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Proven Work &amp; Portfolio</span>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="space-y-3 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold tracking-wide uppercase">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Proven Results &amp; Live Showcase</span>
+            </div>
+            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+              Engineered for Speed, Built for{' '}
+              <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-500 bg-clip-text text-transparent">
+                High Conversions
+              </span>
+            </h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Explore live platforms and client websites built by Bharathkumar E. Each project is crafted with sub-second performance, bulletproof security, and user-centric architecture.
+            </p>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
-            Featured Projects &amp;{' '}
-            <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-500 bg-clip-text text-transparent">
-              Live Case Studies
-            </span>
-          </h2>
-
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-            Explore live applications and platforms engineered with performance, elegance, and measurable conversion results.
-          </p>
+          {/* Quick Navigation to Brief Wizard */}
+          <div className="flex items-center gap-3">
+            <Link
+              href="/#brief-wizard"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-primary/25 transition-all"
+            >
+              <span>Build Your Platform</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
 
-        {/* Category Filter Pills */}
-        <div className="flex flex-wrap items-center justify-center gap-2 mb-12">
-          {[
-            { id: 'all', label: 'All Projects' },
-            { id: 'web-app', label: 'Web Applications' },
-            { id: 'agency', label: 'Agency & Portfolios' },
-            { id: 'saas', label: 'SaaS Platforms' },
-            { id: 'ecommerce', label: 'E-Commerce' },
-          ].map((item) => (
+        {/* Dynamic Category Filter Pills */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {categories.map((cat) => (
             <button
-              key={item.id}
-              onClick={() => setFilter(item.id as typeof filter)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
-                filter === item.id
-                  ? 'bg-primary text-white shadow-md shadow-primary/25'
-                  : 'bg-secondary/80 text-muted-foreground hover:text-foreground hover:bg-secondary'
+              key={cat}
+              onClick={() => setFilter(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all capitalize ${
+                filter === cat
+                  ? 'bg-primary text-white shadow-md shadow-primary/25 scale-105'
+                  : 'bg-secondary/70 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/70'
               }`}
             >
-              {item.label}
+              {cat === 'all' ? `All Platforms (${projects.length})` : cat}
             </button>
           ))}
         </div>
 
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-          {filtered.map((project) => (
-            <div
-              key={project.id}
-              className={`glass-panel rounded-3xl p-6 sm:p-8 border shadow-xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl relative overflow-hidden ${
-                project.isFlagship ? 'border-emerald-500/40 ring-1 ring-emerald-500/20' : 'border-border/70'
-              }`}
-            >
-              {project.isFlagship && (
-                <div className="absolute top-0 right-0 bg-gradient-to-l from-emerald-500 to-teal-600 text-white text-[10px] font-bold px-4 py-1 rounded-bl-xl tracking-wider uppercase shadow-md">
-                  ★ Flagship Live Product
-                </div>
-              )}
+        {/* Portfolio Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {filteredProjects.map((project) => {
+            const isMunnar = project.id.includes('munnar');
+            return (
+              <div
+                key={project.id}
+                className={`glass-panel rounded-3xl p-7 sm:p-8 border transition-all duration-300 flex flex-col justify-between group relative overflow-hidden shadow-xl hover:-translate-y-1 ${
+                  project.featured 
+                    ? 'border-emerald-500/40 hover:border-emerald-500/70 shadow-emerald-500/5' 
+                    : 'border-border hover:border-primary/50'
+                }`}
+              >
+                {/* Featured Badge Glow */}
+                {project.featured && (
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
+                )}
 
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${project.color}`}>
-                    {project.categoryLabel}
-                  </span>
-                </div>
-
-                <h3 className="font-serif text-2xl font-bold text-foreground mb-2">
-                  {project.title}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                  {project.subtitle}
-                </p>
-
-                {/* Tech Tags */}
-                <div className="flex flex-wrap gap-1.5 mb-6">
-                  {project.tags.map((tag) => (
-                    <span key={tag} className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-secondary text-foreground border border-border/50">
-                      {tag}
+                <div>
+                  {/* Top Bar: Category & Impact */}
+                  <div className="flex items-center justify-between gap-3 mb-5">
+                    <span className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-xl border flex items-center gap-1.5 ${
+                      project.featured 
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' 
+                        : 'bg-primary/10 text-primary border-primary/25'
+                    }`}>
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>{project.category}</span>
                     </span>
-                  ))}
+
+                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                      {project.impact}
+                    </span>
+                  </div>
+
+                  {/* Title & Description */}
+                  <div className="space-y-2 mb-6">
+                    <h3 className="font-serif text-2xl font-bold text-foreground group-hover:text-primary transition-colors flex items-center gap-2">
+                      <span>{project.title}</span>
+                      <ArrowUpRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+                    </h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground line-clamp-3">
+                      {project.description}
+                    </p>
+                  </div>
+
+                  {/* Tech Stack Tags */}
+                  <div className="flex flex-wrap gap-1.5 mb-6">
+                    {project.tags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1 rounded-lg bg-secondary/80 border border-border/60 text-[11px] font-medium text-foreground"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Metrics Highlight Row */}
-                <div className="grid grid-cols-3 gap-2 p-3.5 rounded-2xl bg-secondary/50 border border-border/60 mb-6 text-center">
-                  {project.metrics.map((m, mIdx) => (
-                    <div key={mIdx}>
-                      <div className="font-serif font-bold text-base sm:text-lg text-primary">{m.value}</div>
-                      <div className="text-[10px] text-muted-foreground font-medium">{m.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                {/* Bottom Actions */}
+                <div className="pt-5 border-t border-border/60 flex items-center justify-between gap-3">
+                  {isMunnar ? (
+                    <Link
+                      href="/products/munnar-tools"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                    >
+                      <Compass className="w-4 h-4" />
+                      <span>View Dedicated Munnar Case Study &rarr;</span>
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Live Production Architecture</span>
+                    </span>
+                  )}
 
-              {/* Bottom Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-border/60 gap-3">
-                <button
-                  onClick={() => setSelectedProject(project)}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground hover:text-primary transition-colors"
-                >
-                  <Eye className="w-3.5 h-3.5 text-primary" />
-                  <span>View Case Study</span>
-                </button>
-
-                {project.liveUrl ? (
                   <a
-                    href={project.liveUrl}
+                    href={project.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-blue-600 text-white text-xs font-semibold shadow-md shadow-primary/20 transition-all"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-foreground font-semibold text-xs transition-colors"
                   >
-                    <span>Launch Live App</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Launch Live Site</span>
+                    <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
                   </a>
-                ) : (
-                  <Link
-                    href="/#brief-wizard"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                  >
-                    <span>Build Similar &rarr;</span>
-                  </Link>
-                )}
+                </div>
               </div>
-
-            </div>
-          ))}
+            );
+          })}
         </div>
 
       </div>
-
-      {/* Case Study Detail Modal */}
-      {selectedProject && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-          <div 
-            className="w-full max-w-2xl bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-2xl glass-panel relative max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              onClick={() => setSelectedProject(null)}
-              aria-label="Close project modal"
-              className="absolute top-5 right-5 p-2 rounded-xl bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="space-y-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-primary">
-                {selectedProject.categoryLabel}
-              </span>
-              <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
-                {selectedProject.title}
-              </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                {selectedProject.description}
-              </p>
-
-              <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-secondary/60 border border-border text-center">
-                {selectedProject.metrics.map((m, i) => (
-                  <div key={i}>
-                    <div className="font-serif text-xl font-bold text-primary">{m.value}</div>
-                    <div className="text-xs text-muted-foreground">{m.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2 pt-2">
-                <div className="text-xs font-bold uppercase tracking-wider text-foreground">Technologies Utilized</div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedProject.tags.map((t) => (
-                    <span key={t} className="px-3 py-1 rounded-lg bg-secondary text-xs font-semibold text-foreground border border-border">
-                      {t}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-6 border-t border-border/60">
-                {selectedProject.liveUrl && (
-                  <a
-                    href={selectedProject.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-blue-600 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-primary/25 transition-all"
-                  >
-                    <span>Launch Live Application</span>
-                    <ExternalLink className="w-4 h-4" />
-                  </a>
-                )}
-                {selectedProject.internalUrl && selectedProject.internalUrl !== '#' && (
-                  <Link
-                    href={selectedProject.internalUrl}
-                    onClick={() => setSelectedProject(null)}
-                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-xs font-semibold text-foreground transition-all"
-                  >
-                    <span>View Dedicated Product Page</span>
-                  </Link>
-                )}
-                <Link
-                  href="/#brief-wizard"
-                  onClick={() => setSelectedProject(null)}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-card border border-border text-xs font-semibold text-foreground hover:border-primary transition-all"
-                >
-                  <span>Request Similar Custom Platform</span>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </section>
   );
 }

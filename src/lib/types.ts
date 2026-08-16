@@ -8,6 +8,8 @@ export interface Lead {
   createdAt: string;
   notes?: string;
   internalNotes?: string;
+  starred?: boolean;
+  estimatedValue?: number;
 }
 
 export interface ProjectBrief {
@@ -30,6 +32,20 @@ export interface ProjectBrief {
   status: 'new' | 'reviewed' | 'in_progress' | 'completed' | 'archived';
   createdAt: string;
   internalNotes?: string;
+  starred?: boolean;
+  estimatedValue?: number;
+}
+
+export interface ShowcaseProject {
+  id: string;
+  title: string;
+  url: string;
+  category: 'Web App' | 'E-Commerce' | 'SaaS' | 'Landing Page' | 'Mobile PWA' | string;
+  description: string;
+  impact: string;
+  tags: string[];
+  featured?: boolean;
+  createdAt: string;
 }
 
 export interface AnalyticsEvent {

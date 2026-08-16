@@ -1,0 +1,13 @@
+[
+  {
+    "id": "proj-munnar-tools",
+    "title": "Munnar Travel Companion & Trip Expense Tracker",
+    "url": "https://munnartools.vercel.app/",
+    "category": "Web App",
+    "description": "Fullstack travel companion with offline PWA caching, real-time group expense splitting, and curated destination guides.",
+    "impact": "100/100 Core Web Vitals, Live Production",
+    "tags": ["Next.js 15", "TypeScript", "TailwindCSS", "PWA", "Offline Sync"],
+    "featured": true,
+    "createdAt": "2026-08-16T12:00:00.000Z"
+  }
+]
