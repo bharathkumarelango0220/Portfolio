@@ -34,24 +34,26 @@ export function ProjectBriefWizard() {
     'Review & Submit',
   ];
 
-  // Form State
-  const [formData, setFormData] = useState({
+  const initialFormState = {
     businessName: '',
     yourName: '',
     email: '',
     phone: '',
     description: '',
-    goals: ['Promote business', 'Build a brand'] as string[],
+    goals: [] as string[],
     audienceGender: 'All',
     audienceAge: '',
     designLook: 'Modern & minimalist',
     primaryColor: '',
     secondaryColor: '',
     colorTheme: 'Light & Dark Adaptive',
-    keyFeatures: ['Multi interlinked pages', 'Customer response form', 'SEO Acceleration'] as string[],
+    keyFeatures: [] as string[],
     hasContent: 'Yes',
     hasDomain: 'Yes',
-  });
+  };
+
+  // Form State
+  const [formData, setFormData] = useState(initialFormState);
 
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -719,6 +721,12 @@ export function ProjectBriefWizard() {
                 </a>
                 <button
                   onClick={() => {
+                    setFormData(initialFormState);
+                    try {
+                      localStorage.removeItem('apexassure-brief-draft');
+                    } catch {
+                      // ignore
+                    }
                     setSubmitted(false);
                     setStep(1);
                   }}
