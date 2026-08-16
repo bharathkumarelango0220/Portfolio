@@ -79,10 +79,16 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
+  const fetchData = async (showLoading = false) => {
+    if (showLoading) setLoading(true);
     try {
-      const res = await fetch('/api/admin');
+      const res = await fetch(`/api/admin?_t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      });
       const data = await res.json();
       if (data.success) {
         setLeads(data.leads || []);
@@ -91,20 +97,25 @@ export default function AdminDashboardPage() {
     } catch {
       // ignore
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
   };
 
   useEffect(() => {
     const isAuthed = checkAuth();
     if (isAuthed) {
-      fetchData();
+      fetchData(true);
     }
   }, []);
 
   useEffect(() => {
     if (isUnlocked) {
-      fetchData();
+      fetchData(true);
+      // Auto-poll every 3 seconds so new submissions reflect live
+      const interval = setInterval(() => {
+        fetchData(false);
+      }, 3000);
+      return () => clearInterval(interval);
     }
   }, [isUnlocked]);
 
@@ -282,7 +293,7 @@ export default function AdminDashboardPage() {
               </button>
 
               <button
-                onClick={fetchData}
+                onClick={() => fetchData(true)}
                 className="p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-semibold flex items-center gap-1.5 transition-colors"
                 title="Refresh data"
               >
