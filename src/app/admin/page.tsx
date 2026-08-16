@@ -1046,20 +1046,26 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
 
-                      <div className="pt-3 border-t border-border/60 flex items-center justify-between">
-                        <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-                          {proj.url}
-                        </span>
-
+                      <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-2">
                         <a
                           href={proj.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold border border-border transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-xs font-semibold border border-border transition-colors truncate max-w-[150px]"
                         >
-                          <span>Visit Live</span>
-                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
+                          <Globe className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                          <span className="truncate">Visit Live</span>
+                          <ExternalLink className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                         </a>
+
+                        <button
+                          onClick={() => setDeleteTarget({ id: proj.id, type: 'project', name: proj.title })}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive border border-destructive/25 text-xs font-bold transition-colors cursor-pointer"
+                          title="Remove website from portfolio showcase"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1909,9 +1915,14 @@ export default function AdminDashboardPage() {
             </div>
 
             <div className="space-y-1">
-              <h3 className="font-serif text-lg font-bold text-foreground">Confirm Deletion</h3>
+              <h3 className="font-serif text-lg font-bold text-foreground">
+                {deleteTarget.type === 'project' ? 'Remove Website from Portfolio?' : 'Confirm Deletion'}
+              </h3>
               <p className="text-xs text-muted-foreground">
-                Are you sure you want to permanently delete <strong className="text-foreground">{deleteTarget.name}</strong>? This action cannot be undone.
+                {deleteTarget.type === 'project'
+                  ? <>Are you sure you want to remove <strong className="text-foreground">{deleteTarget.name}</strong> from your showcase? It will be deleted from your live website immediately.</>
+                  : <>Are you sure you want to permanently delete <strong className="text-foreground">{deleteTarget.name}</strong>? This action cannot be undone.</>
+                }
               </p>
             </div>
 
@@ -1927,7 +1938,7 @@ export default function AdminDashboardPage() {
                 className="flex-1 py-2.5 rounded-xl bg-destructive hover:bg-red-600 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                <span>Delete</span>
+                <span>{deleteTarget.type === 'project' ? 'Remove Website' : 'Delete'}</span>
               </button>
             </div>
           </div>
