@@ -9,7 +9,7 @@ const LEADS_FILE = path.join(DATA_DIR, 'leads.json');
 const BRIEFS_FILE = path.join(DATA_DIR, 'briefs.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
 
-// Cloud Persistent Database Store IDs (Active Zero-Config Cloud Sync)
+// Cloud Persistent Database Store IDs
 const CLOUD_API_BASE = 'https://api.restful-api.dev/objects';
 const LEADS_STORE_ID = 'ff8081819ff5b11001a00996cd762a00';
 const BRIEFS_STORE_ID = 'ff8081819ff5b11001a00996ea452a01';
@@ -62,6 +62,14 @@ function ensureDataDir() {
   } catch {
     // ignore
   }
+
+  try {
+    if (!fs.existsSync(ANALYTICS_FILE)) {
+      fs.writeFileSync(ANALYTICS_FILE, JSON.stringify([], null, 2));
+    }
+  } catch {
+    // ignore
+  }
 }
 
 // ----------------------------------------------------
@@ -92,7 +100,7 @@ async function syncCloudLeads(leads: Lead[]): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'ApexAssure_Master_Leads_Store_0220',
-        data: { items: leads.slice(0, 100) },
+        data: { items: leads.slice(0, 200) },
       }),
     });
   } catch {
@@ -125,7 +133,7 @@ async function syncCloudBriefs(briefs: ProjectBrief[]): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: 'ApexAssure_Master_Briefs_Store_0220',
-        data: { items: briefs.slice(0, 100) },
+        data: { items: briefs.slice(0, 200) },
       }),
     });
   } catch {
@@ -142,7 +150,7 @@ export function getLeads(): Lead[] {
     if (fs.existsSync(LEADS_FILE)) {
       const data = fs.readFileSync(LEADS_FILE, 'utf-8');
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         memoryLeads = parsed;
         return parsed;
       }
@@ -157,11 +165,10 @@ export async function getLeadsAsync(): Promise<Lead[]> {
   ensureDataDir();
   const localList = getLeads();
   const cloudList = await fetchCloudLeads();
-  
-  // Merge and deduplicate by ID or email+createdAt
+
   const mergedMap = new Map<string, Lead>();
-  cloudList.forEach(l => mergedMap.set(l.id || l.email, l));
-  localList.forEach(l => mergedMap.set(l.id || l.email, l));
+  cloudList.forEach(l => mergedMap.set(l.id, l));
+  localList.forEach(l => mergedMap.set(l.id, l));
 
   const result = Array.from(mergedMap.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -194,7 +201,6 @@ export async function saveLeadAsync(leadData: Omit<Lead, 'id' | 'createdAt' | 's
     // ignore
   }
 
-  // Push to cloud store
   await syncCloudLeads(currentLeads);
   return newLead;
 }
@@ -210,13 +216,13 @@ export function saveLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'status'>): L
   return newLead;
 }
 
-export async function updateLeadStatusAsync(id: string, status: Lead['status'], notes?: string): Promise<boolean> {
+export async function updateLeadStatusAsync(id: string, status: Lead['status'], internalNotes?: string): Promise<boolean> {
   const leads = await getLeadsAsync();
   const index = leads.findIndex(l => l.id === id);
   if (index === -1) return false;
   leads[index].status = status;
-  if (notes !== undefined) {
-    leads[index].notes = notes;
+  if (internalNotes !== undefined) {
+    leads[index].internalNotes = internalNotes;
   }
   memoryLeads = leads;
   try {
@@ -228,8 +234,36 @@ export async function updateLeadStatusAsync(id: string, status: Lead['status'], 
   return true;
 }
 
-export function updateLeadStatus(id: string, status: Lead['status'], notes?: string): boolean {
-  updateLeadStatusAsync(id, status, notes).catch(() => {});
+export async function updateLeadNotesAsync(id: string, internalNotes: string): Promise<boolean> {
+  const leads = await getLeadsAsync();
+  const index = leads.findIndex(l => l.id === id);
+  if (index === -1) return false;
+  leads[index].internalNotes = internalNotes;
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // ignore
+  }
+  await syncCloudLeads(leads);
+  return true;
+}
+
+export async function deleteLeadAsync(id: string): Promise<boolean> {
+  let leads = await getLeadsAsync();
+  leads = leads.filter(l => l.id !== id);
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // ignore
+  }
+  await syncCloudLeads(leads);
+  return true;
+}
+
+export function updateLeadStatus(id: string, status: Lead['status'], internalNotes?: string): boolean {
+  updateLeadStatusAsync(id, status, internalNotes).catch(() => {});
   return true;
 }
 
@@ -242,7 +276,7 @@ export function getBriefs(): ProjectBrief[] {
     if (fs.existsSync(BRIEFS_FILE)) {
       const data = fs.readFileSync(BRIEFS_FILE, 'utf-8');
       const parsed = JSON.parse(data);
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         memoryBriefs = parsed;
         return parsed;
       }
@@ -259,8 +293,8 @@ export async function getBriefsAsync(): Promise<ProjectBrief[]> {
   const cloudList = await fetchCloudBriefs();
 
   const mergedMap = new Map<string, ProjectBrief>();
-  cloudList.forEach(b => mergedMap.set(b.id || b.email, b));
-  localList.forEach(b => mergedMap.set(b.id || b.email, b));
+  cloudList.forEach(b => mergedMap.set(b.id, b));
+  localList.forEach(b => mergedMap.set(b.id, b));
 
   const result = Array.from(mergedMap.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -293,7 +327,6 @@ export async function saveBriefAsync(briefData: Omit<ProjectBrief, 'id' | 'creat
     // ignore
   }
 
-  // Push to cloud store
   await syncCloudBriefs(currentBriefs);
   return newBrief;
 }
@@ -309,11 +342,14 @@ export function saveBrief(briefData: Omit<ProjectBrief, 'id' | 'createdAt' | 'st
   return newBrief;
 }
 
-export async function updateBriefStatusAsync(id: string, status: ProjectBrief['status']): Promise<boolean> {
+export async function updateBriefStatusAsync(id: string, status: ProjectBrief['status'], internalNotes?: string): Promise<boolean> {
   const briefs = await getBriefsAsync();
   const index = briefs.findIndex(b => b.id === id);
   if (index === -1) return false;
   briefs[index].status = status;
+  if (internalNotes !== undefined) {
+    briefs[index].internalNotes = internalNotes;
+  }
   memoryBriefs = briefs;
   try {
     fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
@@ -324,8 +360,36 @@ export async function updateBriefStatusAsync(id: string, status: ProjectBrief['s
   return true;
 }
 
-export function updateBriefStatus(id: string, status: ProjectBrief['status']): boolean {
-  updateBriefStatusAsync(id, status).catch(() => {});
+export async function updateBriefNotesAsync(id: string, internalNotes: string): Promise<boolean> {
+  const briefs = await getBriefsAsync();
+  const index = briefs.findIndex(b => b.id === id);
+  if (index === -1) return false;
+  briefs[index].internalNotes = internalNotes;
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // ignore
+  }
+  await syncCloudBriefs(briefs);
+  return true;
+}
+
+export async function deleteBriefAsync(id: string): Promise<boolean> {
+  let briefs = await getBriefsAsync();
+  briefs = briefs.filter(b => b.id !== id);
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // ignore
+  }
+  await syncCloudBriefs(briefs);
+  return true;
+}
+
+export function updateBriefStatus(id: string, status: ProjectBrief['status'], internalNotes?: string): boolean {
+  updateBriefStatusAsync(id, status, internalNotes).catch(() => {});
   return true;
 }
 

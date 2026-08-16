@@ -4,6 +4,7 @@ import { ProjectBrief, Lead } from './types';
 const primaryBlue = [37, 99, 235]; // #2563EB
 const slateDark = [15, 23, 42]; // #0F172A
 const textMuted = [100, 116, 139]; // #64748B
+const emeraldGreen = [16, 185, 129]; // #10B981
 
 /**
  * Generate and download an executive PDF document for a single Quick Contact Lead
@@ -17,92 +18,122 @@ export function exportSingleLeadPDF(lead: Lead) {
 
   // Top Header Banner
   doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.rect(0, 0, 210, 26, 'F');
+  doc.rect(0, 0, 210, 28, 'F');
 
-  // Brand Name
+  // Brand Name & Verified Seal
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('APEXASSURE STUDIO', 14, 12);
+  doc.text('APEXASSURE STUDIO', 14, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('Client Quick Contact & Lead Ingestion Record', 14, 18);
-  doc.text(`Received: ${new Date(lead.createdAt).toLocaleDateString()}`, 155, 18);
+  doc.text('Official Client Contact Record & Requirement Ingestion', 14, 20);
+  doc.text(`Record Date: ${new Date(lead.createdAt).toLocaleDateString()}`, 150, 20);
 
   // Document Title
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
-  doc.text(`Lead Inquiry: ${lead.name}`, 14, 38);
+  doc.text(`Lead Inquiry: ${lead.name}`, 14, 40);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text(`Source: ${lead.source || 'Website Contact Form'}  |  Status: ${lead.status.toUpperCase()}`, 14, 44);
+  doc.text(`Source: ${lead.source || 'Website Contact Form'}   |   Stage: ${lead.status.toUpperCase()}`, 14, 47);
 
   // Divider
   doc.setDrawColor(226, 232, 240);
-  doc.setLineWidth(0.5);
-  doc.line(14, 48, 196, 48);
+  doc.setLineWidth(0.6);
+  doc.line(14, 52, 196, 52);
 
-  let y = 56;
+  let y = 60;
 
-  // Section: Contact Profile
+  // Section 1: Contact Profile Card
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, y, 182, 32, 3, 3, 'F');
+  doc.roundedRect(14, y, 182, 34, 3, 3, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, y, 182, 32, 3, 3, 'D');
+  doc.roundedRect(14, y, 182, 34, 3, 3, 'D');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.text('1. CLIENT CONTACT INFORMATION', 18, y + 6);
+  doc.text('1. CLIENT CONTACT INFORMATION', 18, y + 7);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-  doc.text(`Client Full Name: ${lead.name}`, 18, y + 14);
-  doc.text(`Email Address: ${lead.email}`, 18, y + 21);
-  doc.text(`Phone / WhatsApp: ${lead.phone}`, 110, y + 14);
-  doc.text(`Date & Time: ${new Date(lead.createdAt).toLocaleString()}`, 110, y + 21);
+  doc.text(`Full Name: ${lead.name}`, 18, y + 15);
+  doc.text(`Email Address: ${lead.email}`, 18, y + 23);
+  doc.text(`Phone / WhatsApp: ${lead.phone}`, 110, y + 15);
+  doc.text(`Ingestion Timestamp: ${new Date(lead.createdAt).toLocaleString()}`, 110, y + 23);
 
-  y += 40;
+  y += 42;
 
-  // Section: Inquiry Scope / Message
+  // Section 2: Client Message
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.text('2. CLIENT MESSAGE & PROJECT REQUIREMENTS', 14, y);
+  doc.text('2. CLIENT INQUIRY & SCOPE REQUIREMENTS', 14, y);
 
   y += 6;
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, y, 182, 45, 3, 3, 'F');
+  doc.roundedRect(14, y, 182, 42, 3, 3, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, y, 182, 45, 3, 3, 'D');
+  doc.roundedRect(14, y, 182, 42, 3, 3, 'D');
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9.5);
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-  const msg = lead.notes || 'Direct contact inquiry received through ApexAssure studio.';
+  const msg = lead.notes || 'Direct contact inquiry received via ApexAssure Studio website.';
   const msgLines = doc.splitTextToSize(msg, 172);
-  doc.text(msgLines, 18, y + 8);
+  doc.text(msgLines, 18, y + 9);
 
-  y += 55;
+  y += 50;
 
-  // Section: Next Steps
+  // Section 3: Internal Admin Notes (if present)
+  if (lead.internalNotes) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(emeraldGreen[0], emeraldGreen[1], emeraldGreen[2]);
+    doc.text('3. PRIVATE ADMIN FOLLOW-UP NOTES', 14, y);
+    y += 6;
+
+    doc.setFillColor(240, 253, 244);
+    doc.roundedRect(14, y, 182, 24, 3, 3, 'F');
+    doc.setDrawColor(187, 247, 208);
+    doc.roundedRect(14, y, 182, 24, 3, 3, 'D');
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+    const noteLines = doc.splitTextToSize(lead.internalNotes, 172);
+    doc.text(noteLines, 18, y + 8);
+    y += 32;
+  }
+
+  // Section 4: Signature / Verification Block
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.text('3. RECOMMENDED ACTIONS & CONSULTATION STEPS', 14, y);
+  doc.text('CONSULTATION & VERIFICATION', 14, y);
+  y += 10;
 
-  y += 6;
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
+  doc.setFontSize(8.5);
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-  doc.text('•  Initial Discovery Call / WhatsApp consultation with client', 18, y);
-  doc.text('•  Review technical architecture and conversion goals', 18, y + 6);
-  doc.text('•  Issue Formal Project Scope & Milestone Roadmap', 18, y + 12);
+  doc.text('Lead Lead Reviewed By:', 14, y);
+  doc.text('Client Representative:', 110, y);
+
+  y += 16;
+  doc.setDrawColor(203, 213, 225);
+  doc.line(14, y, 80, y);
+  doc.line(110, y, 176, y);
+
+  doc.setFontSize(8);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text('BHARATHKUMAR E (Lead Engineer)', 14, y + 4);
+  doc.text(`${lead.name} (Client)`, 110, y + 4);
 
   // Footer note
   doc.setDrawColor(226, 232, 240);
@@ -110,7 +141,7 @@ export function exportSingleLeadPDF(lead: Lead) {
   doc.setFontSize(8);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
   doc.text('ApexAssure Studio • Contact: +91 8220802736 • bharathkumarelango02@gmail.com', 14, 282);
-  doc.text('Page 1 of 1 • Confidential Record', 145, 282);
+  doc.text('Confidential Record • Page 1 of 1', 148, 282);
 
   const cleanName = lead.name.replace(/[^a-zA-Z0-9]/g, '_') || 'Lead';
   doc.save(`ApexAssure_Lead_${cleanName}.pdf`);
@@ -128,64 +159,64 @@ export function exportSingleBriefPDF(brief: ProjectBrief | Record<string, unknow
 
   // Top Header Banner
   doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.rect(0, 0, 210, 26, 'F');
+  doc.rect(0, 0, 210, 28, 'F');
 
   // Brand Name
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('APEXASSURE STUDIO', 14, 12);
+  doc.text('APEXASSURE STUDIO', 14, 13);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('Functional Requirements Document (FRD) & Project Brief', 14, 18);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 155, 18);
+  doc.text('Functional Requirements Document (FRD) & Executive Proposal', 14, 20);
+  doc.text(`Date: ${new Date().toLocaleDateString()}`, 155, 20);
 
   // Document Title
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(18);
   const businessName = String(brief.businessName || 'Project Brief');
-  doc.text(businessName, 14, 38);
+  doc.text(businessName, 14, 40);
 
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
-  doc.text(`Prepared by Bharathkumar E for ${brief.yourName || 'Client'}`, 14, 44);
+  doc.text(`Prepared by Bharathkumar E for ${brief.yourName || 'Client'}   |   Stage: ${String(brief.status || 'NEW').toUpperCase()}`, 14, 47);
 
   // Divider
   doc.setDrawColor(226, 232, 240);
   doc.setLineWidth(0.5);
-  doc.line(14, 48, 196, 48);
+  doc.line(14, 52, 196, 52);
 
-  let y = 56;
+  let y = 60;
 
-  // Section: Client & Contact Info
+  // Section 1: Client & Contact Profile
   doc.setFillColor(248, 250, 252);
-  doc.roundedRect(14, y, 182, 28, 3, 3, 'F');
+  doc.roundedRect(14, y, 182, 30, 3, 3, 'F');
   doc.setDrawColor(226, 232, 240);
-  doc.roundedRect(14, y, 182, 28, 3, 3, 'D');
+  doc.roundedRect(14, y, 182, 30, 3, 3, 'D');
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.text('1. CONTACT & CLIENT PROFILE', 18, y + 6);
+  doc.text('1. CLIENT & CONTACT PROFILE', 18, y + 6);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
-  doc.text(`Contact Person: ${brief.yourName || '—'}`, 18, y + 13);
-  doc.text(`Email Address: ${brief.email || '—'}`, 18, y + 20);
-  doc.text(`Phone / WhatsApp: ${brief.phone || '—'}`, 110, y + 13);
-  doc.text(`Status: ${String(brief.status || 'New Brief').toUpperCase()}`, 110, y + 20);
+  doc.text(`Contact Person: ${brief.yourName || '—'}`, 18, y + 14);
+  doc.text(`Email Address: ${brief.email || '—'}`, 18, y + 21);
+  doc.text(`Phone / WhatsApp: ${brief.phone || '—'}`, 110, y + 14);
+  doc.text(`Status: ${String(brief.status || 'New').toUpperCase()}`, 110, y + 21);
 
-  y += 35;
+  y += 38;
 
-  // Section: Business Scope & Vision
+  // Section 2: Business Overview & Scope
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
-  doc.text('2. BUSINESS OVERVIEW & OBJECTIVES', 14, y);
+  doc.text('2. BUSINESS OVERVIEW & PROJECT SCOPE', 14, y);
 
   y += 5;
   doc.setFont('helvetica', 'normal');
@@ -205,7 +236,7 @@ export function exportSingleBriefPDF(brief: ProjectBrief | Record<string, unknow
 
   y += 10;
 
-  // Section: Target Audience & Visual Style
+  // Section 3: Target Audience & Visual Style
   doc.setFillColor(248, 250, 252);
   doc.roundedRect(14, y, 182, 34, 3, 3, 'F');
   doc.setDrawColor(226, 232, 240);
@@ -230,7 +261,7 @@ export function exportSingleBriefPDF(brief: ProjectBrief | Record<string, unknow
 
   y += 42;
 
-  // Section: Selected Technical Features
+  // Section 4: Technical Capabilities
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
@@ -250,16 +281,43 @@ export function exportSingleBriefPDF(brief: ProjectBrief | Record<string, unknow
     y += 5.5;
   });
 
+  // Section 5: Signature & Acceptance Block
+  y += 8;
+  if (y > 235) {
+    doc.addPage();
+    y = 25;
+  }
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.setTextColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
+  doc.text('5. PROJECT SIGN-OFF & ACCEPTANCE', 14, y);
+  y += 12;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8.5);
+  doc.setTextColor(slateDark[0], slateDark[1], slateDark[2]);
+  doc.text('Prepared By:', 14, y);
+  doc.text('Accepted By (Client):', 110, y);
+
+  y += 16;
+  doc.setDrawColor(203, 213, 225);
+  doc.line(14, y, 80, y);
+  doc.line(110, y, 176, y);
+
+  doc.setFontSize(8);
+  doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
+  doc.text('BHARATHKUMAR E (Lead Engineer)', 14, y + 4);
+  doc.text(`${brief.yourName || 'Client'} (${brief.businessName || 'Organization'})`, 110, y + 4);
+
   // Footer note
   doc.setDrawColor(226, 232, 240);
   doc.line(14, 275, 196, 275);
-
   doc.setFontSize(8);
   doc.setTextColor(textMuted[0], textMuted[1], textMuted[2]);
   doc.text('ApexAssure Studio • Contact: +91 8220802736 • bharathkumarelango02@gmail.com', 14, 282);
   doc.text('Page 1 of 1 • 100% Risk-Free Guarantee', 145, 282);
 
-  // Trigger browser download
   const cleanName = businessName.replace(/[^a-zA-Z0-9]/g, '_') || 'Project';
   doc.save(`ApexAssure_FRD_${cleanName}.pdf`);
 }
@@ -274,7 +332,6 @@ export function exportAllBriefsPDF(briefs: ProjectBrief[]) {
     format: 'a4',
   });
 
-  // Header Banner
   doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
   doc.rect(0, 0, 210, 26, 'F');
 
@@ -327,7 +384,6 @@ export function exportAllBriefsPDF(briefs: ProjectBrief[]) {
     y += 50;
   });
 
-  // Footer note
   doc.setDrawColor(226, 232, 240);
   doc.line(14, 280, 196, 280);
   doc.setFontSize(8);
@@ -347,18 +403,17 @@ export function exportAllSubmissionsPDF(leads: Lead[], briefs: ProjectBrief[]) {
     format: 'a4',
   });
 
-  // Header Banner
   doc.setFillColor(primaryBlue[0], primaryBlue[1], primaryBlue[2]);
   doc.rect(0, 0, 210, 28, 'F');
 
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
-  doc.text('APEXASSURE STUDIO — MASTER SUBMISSIONS REPORT', 14, 12);
+  doc.text('APEXASSURE STUDIO — MASTER INGESTION REPORT', 14, 12);
 
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(`Combined Ingestion: ${leads.length} Quick Leads + ${briefs.length} Project Briefs (Total: ${leads.length + briefs.length})`, 14, 19);
+  doc.text(`Total Records: ${leads.length} Quick Leads + ${briefs.length} Project Briefs (Total: ${leads.length + briefs.length})`, 14, 19);
   doc.text(`Exported: ${new Date().toLocaleDateString()}`, 155, 19);
 
   let y = 38;
@@ -443,7 +498,6 @@ export function exportAllSubmissionsPDF(leads: Lead[], briefs: ProjectBrief[]) {
     y += 44;
   });
 
-  // Footer note
   doc.setDrawColor(226, 232, 240);
   doc.line(14, 280, 196, 280);
   doc.setFontSize(8);

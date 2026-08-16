@@ -1,5 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getLeadsAsync, getBriefsAsync, updateLeadStatusAsync, updateBriefStatusAsync } from '@/lib/db';
+import { 
+  getLeadsAsync, 
+  getBriefsAsync, 
+  updateLeadStatusAsync, 
+  updateBriefStatusAsync,
+  updateLeadNotesAsync,
+  updateBriefNotesAsync,
+  deleteLeadAsync,
+  deleteBriefAsync
+} from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -15,6 +24,7 @@ export async function GET() {
       contactedLeads: leads.filter(l => l.status === 'contacted').length,
       totalBriefs: briefs.length,
       newBriefs: briefs.filter(b => b.status === 'new').length,
+      archived: leads.filter(l => l.status === 'archived').length + briefs.filter(b => b.status === 'archived').length,
     };
 
     return NextResponse.json({ success: true, stats, leads, briefs }, {
@@ -31,15 +41,35 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { action, id, status, notes } = body;
+    const { action, id, status, notes, internalNotes } = body;
 
     if (action === 'update_lead_status') {
-      const ok = await updateLeadStatusAsync(id, status, notes);
+      const ok = await updateLeadStatusAsync(id, status, internalNotes);
       return NextResponse.json({ success: ok });
     }
 
     if (action === 'update_brief_status') {
-      const ok = await updateBriefStatusAsync(id, status);
+      const ok = await updateBriefStatusAsync(id, status, internalNotes);
+      return NextResponse.json({ success: ok });
+    }
+
+    if (action === 'update_lead_notes') {
+      const ok = await updateLeadNotesAsync(id, notes || internalNotes || '');
+      return NextResponse.json({ success: ok });
+    }
+
+    if (action === 'update_brief_notes') {
+      const ok = await updateBriefNotesAsync(id, notes || internalNotes || '');
+      return NextResponse.json({ success: ok });
+    }
+
+    if (action === 'delete_lead') {
+      const ok = await deleteLeadAsync(id);
+      return NextResponse.json({ success: ok });
+    }
+
+    if (action === 'delete_brief') {
+      const ok = await deleteBriefAsync(id);
       return NextResponse.json({ success: ok });
     }
 

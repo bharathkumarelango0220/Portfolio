@@ -4,9 +4,10 @@ export interface Lead {
   email: string;
   phone: string;
   source?: string;
-  status: 'new' | 'contacted' | 'in_review' | 'converted';
+  status: 'new' | 'contacted' | 'in_review' | 'converted' | 'archived';
   createdAt: string;
   notes?: string;
+  internalNotes?: string;
 }
 
 export interface ProjectBrief {
@@ -26,8 +27,9 @@ export interface ProjectBrief {
   keyFeatures: string[];
   hasContent: string;
   hasDomain: string;
-  status: 'new' | 'reviewed' | 'in_progress' | 'completed';
+  status: 'new' | 'reviewed' | 'in_progress' | 'completed' | 'archived';
   createdAt: string;
+  internalNotes?: string;
 }
 
 export interface AnalyticsEvent {

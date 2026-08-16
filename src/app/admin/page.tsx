@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { MobileDock } from '@/components/MobileDock';
 import { Lead, ProjectBrief } from '@/lib/types';
-import { exportSingleBriefPDF, exportSingleLeadPDF, exportAllBriefsPDF, exportAllSubmissionsPDF } from '@/lib/pdfGenerator';
+import { exportSingleBriefPDF, exportSingleLeadPDF, exportAllSubmissionsPDF } from '@/lib/pdfGenerator';
 import { 
-  ShieldCheck, 
   Users, 
   FileSpreadsheet, 
   Search, 
@@ -26,17 +25,36 @@ import {
   FileText,
   MessageSquare,
   Sparkles,
-  Layers
+  Layers,
+  Trash2,
+  Archive,
+  Edit3,
+  Volume2,
+  VolumeX,
+  Plus,
+  Save,
+  X,
+  AlertTriangle,
+  FileDown
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'leads' | 'briefs'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'new' | 'in_progress' | 'converted' | 'archived'>('all');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [briefs, setBriefs] = useState<ProjectBrief[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // Modals
   const [selectedBrief, setSelectedBrief] = useState<ProjectBrief | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'lead' | 'brief'; name: string } | null>(null);
+  const [editingNotes, setEditingNotes] = useState<{ id: string; type: 'lead' | 'brief'; text: string } | null>(null);
+
+  // Track previous counts for audio alerts
+  const prevCountRef = useRef<number>(0);
 
   // Authentication Security Gate
   const [isUnlocked, setIsUnlocked] = useState(false);
@@ -83,6 +101,42 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Synthesize a pleasant chime using Web Audio API
+  const playNewLeadChime = () => {
+    if (!soundEnabled || typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      // Note 1: E5
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(659.25, now);
+      gain1.gain.setValueAtTime(0.15, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.5);
+
+      // Note 2: B5 (higher, pleasant chime)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.setValueAtTime(987.77, now + 0.12);
+      gain2.gain.setValueAtTime(0.18, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.7);
+    } catch {
+      // ignore
+    }
+  };
+
   const fetchData = async (showLoading = false) => {
     if (showLoading) setLoading(true);
     try {
@@ -95,8 +149,18 @@ export default function AdminDashboardPage() {
       });
       const data = await res.json();
       if (data.success) {
-        setLeads(data.leads || []);
-        setBriefs(data.briefs || []);
+        const newLeads = data.leads || [];
+        const newBriefs = data.briefs || [];
+        const totalCount = newLeads.length + newBriefs.length;
+
+        // Trigger chime if count increased
+        if (prevCountRef.current > 0 && totalCount > prevCountRef.current) {
+          playNewLeadChime();
+        }
+        prevCountRef.current = totalCount;
+
+        setLeads(newLeads);
+        setBriefs(newBriefs);
       }
     } catch {
       // ignore
@@ -115,14 +179,14 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     if (isUnlocked) {
       fetchData(true);
-      // Auto-poll every 3 seconds so new submissions reflect live
       const interval = setInterval(() => {
         fetchData(false);
       }, 3000);
       return () => clearInterval(interval);
     }
-  }, [isUnlocked]);
+  }, [isUnlocked, soundEnabled]);
 
+  // Stage & Status Management
   const handleUpdateLeadStatus = async (id: string, newStatus: Lead['status']) => {
     try {
       const res = await fetch('/api/admin', {
@@ -156,9 +220,59 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Internal Notes Management
+  const handleSaveNotes = async () => {
+    if (!editingNotes) return;
+    try {
+      const action = editingNotes.type === 'lead' ? 'update_lead_notes' : 'update_brief_notes';
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id: editingNotes.id, notes: editingNotes.text }),
+      });
+      if (res.ok) {
+        if (editingNotes.type === 'lead') {
+          setLeads(prev => prev.map(l => l.id === editingNotes.id ? { ...l, internalNotes: editingNotes.text } : l));
+        } else {
+          setBriefs(prev => prev.map(b => b.id === editingNotes.id ? { ...b, internalNotes: editingNotes.text } : b));
+          if (selectedBrief && selectedBrief.id === editingNotes.id) {
+            setSelectedBrief(prev => prev ? { ...prev, internalNotes: editingNotes.text } : null);
+          }
+        }
+        setEditingNotes(null);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  // Delete Action
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      const action = deleteTarget.type === 'lead' ? 'delete_lead' : 'delete_brief';
+      const res = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, id: deleteTarget.id }),
+      });
+      if (res.ok) {
+        if (deleteTarget.type === 'lead') {
+          setLeads(prev => prev.filter(l => l.id !== deleteTarget.id));
+        } else {
+          setBriefs(prev => prev.filter(b => b.id !== deleteTarget.id));
+          if (selectedBrief?.id === deleteTarget.id) setSelectedBrief(null);
+        }
+        setDeleteTarget(null);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // CSV Export for Leads
   const exportLeadsCSV = () => {
-    const headers = ['ID', 'Name', 'Email', 'Phone', 'Source', 'Status', 'Date', 'Notes'];
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'Source', 'Status', 'Date', 'Notes', 'InternalNotes'];
     const rows = leads.map(l => [
       l.id,
       `"${l.name}"`,
@@ -167,7 +281,8 @@ export default function AdminDashboardPage() {
       `"${l.source}"`,
       l.status,
       new Date(l.createdAt).toLocaleDateString(),
-      `"${(l.notes || '').replace(/"/g, '""')}"`
+      `"${(l.notes || '').replace(/"/g, '""')}"`,
+      `"${(l.internalNotes || '').replace(/"/g, '""')}"`
     ]);
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -180,27 +295,37 @@ export default function AdminDashboardPage() {
     document.body.removeChild(link);
   };
 
-  // PDF Export Handlers
-  const handleExportAllPDF = () => {
-    exportAllSubmissionsPDF(leads, briefs);
+  // Filtering Logic
+  const filterByStatus = (status: string) => {
+    if (statusFilter === 'all') return status !== 'archived';
+    if (statusFilter === 'new') return status === 'new';
+    if (statusFilter === 'in_progress') return status === 'contacted' || status === 'reviewed' || status === 'in_progress';
+    if (statusFilter === 'converted') return status === 'converted' || status === 'completed';
+    if (statusFilter === 'archived') return status === 'archived';
+    return true;
   };
 
   const filteredLeads = leads.filter(l => 
-    l.name.toLowerCase().includes(search.toLowerCase()) ||
-    l.email.toLowerCase().includes(search.toLowerCase()) ||
-    l.phone.includes(search) ||
-    (l.notes && l.notes.toLowerCase().includes(search.toLowerCase()))
+    filterByStatus(l.status) && (
+      l.name.toLowerCase().includes(search.toLowerCase()) ||
+      l.email.toLowerCase().includes(search.toLowerCase()) ||
+      l.phone.includes(search) ||
+      (l.notes && l.notes.toLowerCase().includes(search.toLowerCase())) ||
+      (l.internalNotes && l.internalNotes.toLowerCase().includes(search.toLowerCase()))
+    )
   );
 
   const filteredBriefs = briefs.filter(b =>
-    b.businessName.toLowerCase().includes(search.toLowerCase()) ||
-    b.yourName.toLowerCase().includes(search.toLowerCase()) ||
-    b.email.toLowerCase().includes(search.toLowerCase()) ||
-    b.phone.includes(search) ||
-    b.description.toLowerCase().includes(search.toLowerCase())
+    filterByStatus(b.status) && (
+      b.businessName.toLowerCase().includes(search.toLowerCase()) ||
+      b.yourName.toLowerCase().includes(search.toLowerCase()) ||
+      b.email.toLowerCase().includes(search.toLowerCase()) ||
+      b.phone.includes(search) ||
+      b.description.toLowerCase().includes(search.toLowerCase()) ||
+      (b.internalNotes && b.internalNotes.toLowerCase().includes(search.toLowerCase()))
+    )
   );
 
-  // Combined Feed of both Leads & Briefs sorted by date
   type CombinedItem = 
     | { type: 'lead'; item: Lead; date: Date }
     | { type: 'brief'; item: ProjectBrief; date: Date };
@@ -308,11 +433,25 @@ export default function AdminDashboardPage() {
                 Client Leads &amp; Project Briefs
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground">
-                Real-time ingestion hub. Manage inquiries and download PDF functional requirement documents.
+                Real-time ingestion hub. Manage client lifecycles, add private notes, and generate executive PDFs.
               </p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
+              {/* Audio Chime Toggle */}
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                  soundEnabled 
+                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' 
+                    : 'bg-secondary text-muted-foreground border-border'
+                }`}
+                title={soundEnabled ? 'Live Audio Chime Enabled (Plays when new lead arrives)' : 'Audio Muted'}
+              >
+                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                <span className="hidden md:inline">{soundEnabled ? 'Alerts On' : 'Muted'}</span>
+              </button>
+
               <button
                 onClick={handleLock}
                 className="p-2.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -332,11 +471,11 @@ export default function AdminDashboardPage() {
               </button>
 
               <button
-                onClick={handleExportAllPDF}
+                onClick={() => exportAllSubmissionsPDF(leads, briefs)}
                 className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-red-600/25 transition-all"
                 title="Export Master Executive PDF containing all leads and briefs"
               >
-                <FileText className="w-4 h-4" />
+                <FileDown className="w-4 h-4" />
                 <span>Export All (PDF)</span>
               </button>
 
@@ -354,7 +493,7 @@ export default function AdminDashboardPage() {
           {/* Stats Overview */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div 
-              onClick={() => setActiveTab('leads')}
+              onClick={() => { setActiveTab('leads'); setStatusFilter('new'); }}
               className="glass-panel p-5 rounded-2xl border border-border hover:border-primary/50 transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold mb-2">
@@ -368,7 +507,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div 
-              onClick={() => setActiveTab('briefs')}
+              onClick={() => { setActiveTab('briefs'); setStatusFilter('new'); }}
               className="glass-panel p-5 rounded-2xl border border-border hover:border-emerald-500/50 transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold mb-2">
@@ -382,7 +521,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div 
-              onClick={() => setActiveTab('all')}
+              onClick={() => { setActiveTab('all'); setStatusFilter('all'); }}
               className="glass-panel p-5 rounded-2xl border border-border hover:border-blue-500/50 transition-all cursor-pointer group"
             >
               <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold mb-2">
@@ -411,53 +550,81 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* Tab Selector & Search Bar */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            
-            <div className="flex p-1 bg-secondary/80 rounded-2xl border border-border">
-              <button
-                onClick={() => setActiveTab('all')}
-                className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'all'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                All Responses ({leads.length + briefs.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('leads')}
-                className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'leads'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Quick Leads ({leads.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('briefs')}
-                className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
-                  activeTab === 'briefs'
-                    ? 'bg-card text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                Project Briefs ({briefs.length})
-              </button>
+          {/* Tab Selector, Stage Filter Chips & Search Bar */}
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+              
+              {/* Main Tabs */}
+              <div className="flex p-1 bg-secondary/80 rounded-2xl border border-border">
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'all'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  All Responses ({leads.length + briefs.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('leads')}
+                  className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'leads'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Quick Leads ({leads.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('briefs')}
+                  className={`py-2 px-3.5 sm:px-4 rounded-xl text-xs font-bold transition-all ${
+                    activeTab === 'briefs'
+                      ? 'bg-card text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Project Briefs ({briefs.length})
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by name, company, email, notes..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-foreground"
+                />
+              </div>
+
             </div>
 
-            <div className="relative flex-1 max-w-md">
-              <Search className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search by company, client name, email, phone..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-foreground"
-              />
+            {/* Quick Status Filter Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap text-xs">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mr-1">Filter Stage:</span>
+              {[
+                { key: 'all', label: 'All Active' },
+                { key: 'new', label: '🟡 New Pending' },
+                { key: 'in_progress', label: '🔵 In Review' },
+                { key: 'converted', label: '🟢 Converted' },
+                { key: 'archived', label: '📦 Archived' },
+              ].map(chip => (
+                <button
+                  key={chip.key}
+                  onClick={() => setStatusFilter(chip.key as typeof statusFilter)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+                    statusFilter === chip.key
+                      ? 'bg-primary text-white border-primary shadow-sm'
+                      : 'bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground border-border/70'
+                  }`}
+                >
+                  {chip.label}
+                </button>
+              ))}
             </div>
-
           </div>
 
           {/* TAB 1: ALL RESPONSES (COMBINED MASTER FEED) */}
@@ -465,7 +632,7 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               {combinedFeed.length === 0 ? (
                 <div className="glass-panel rounded-3xl p-12 text-center text-muted-foreground border border-border">
-                  No form submissions found matching your search.
+                  No submissions found matching the current filter.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -475,39 +642,83 @@ export default function AdminDashboardPage() {
                       return (
                         <div 
                           key={`feed-lead-${l.id}-${index}`}
-                          className="glass-panel rounded-3xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden"
+                          className="glass-panel rounded-3xl p-6 border border-border hover:border-primary/50 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden group"
                         >
-                          {/* Accent Pill */}
-                          <div className="flex items-center justify-between gap-2 mb-4">
-                            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              <span>Quick Contact Lead</span>
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(l.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
+                          <div>
+                            {/* Card Header Badge & Actions */}
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                              <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25 flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                <span>Quick Contact Lead</span>
+                              </span>
 
-                          {/* Client Details */}
-                          <div className="space-y-2 mb-4">
-                            <h3 className="font-serif text-xl font-bold text-foreground">{l.name}</h3>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {l.notes || 'Direct contact inquiry received via website.'}
-                            </p>
-                            <div className="pt-2 space-y-1 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1.5 text-foreground truncate">
-                                <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                <a href={`mailto:${l.email}`} className="hover:underline truncate">{l.email}</a>
+                              <div className="flex items-center gap-1">
+                                <select
+                                  value={l.status}
+                                  onChange={(e) => handleUpdateLeadStatus(l.id, e.target.value as Lead['status'])}
+                                  className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-secondary border border-border outline-none cursor-pointer"
+                                >
+                                  <option value="new">🟡 New</option>
+                                  <option value="contacted">🔵 Contacted</option>
+                                  <option value="converted">🟢 Converted</option>
+                                  <option value="archived">📦 Archive</option>
+                                </select>
+
+                                <button
+                                  onClick={() => setDeleteTarget({ id: l.id, type: 'lead', name: l.name })}
+                                  className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                                  title="Delete Lead"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
                               </div>
-                              <div className="flex items-center gap-1.5 text-foreground">
-                                <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                <a href={`tel:${l.phone}`} className="hover:underline">{l.phone}</a>
+                            </div>
+
+                            {/* Client Details */}
+                            <div className="space-y-2 mb-4">
+                              <h3 className="font-serif text-xl font-bold text-foreground">{l.name}</h3>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {l.notes || 'Direct contact inquiry received via website.'}
+                              </p>
+                              
+                              <div className="pt-2 space-y-1 text-xs text-muted-foreground">
+                                <div className="flex items-center gap-1.5 text-foreground truncate">
+                                  <Mail className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                  <a href={`mailto:${l.email}`} className="hover:underline truncate">{l.email}</a>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-foreground">
+                                  <Phone className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                  <a href={`tel:${l.phone}`} className="hover:underline">{l.phone}</a>
+                                </div>
                               </div>
+                            </div>
+
+                            {/* Internal Notes Preview / Add Button */}
+                            <div className="pt-2">
+                              {l.internalNotes ? (
+                                <div 
+                                  onClick={() => setEditingNotes({ id: l.id, type: 'lead', text: l.internalNotes || '' })}
+                                  className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-start justify-between cursor-pointer hover:bg-emerald-500/15 transition-colors"
+                                >
+                                  <div className="line-clamp-2 text-[11px]">
+                                    <strong>Private Note:</strong> {l.internalNotes}
+                                  </div>
+                                  <Edit3 className="w-3.5 h-3.5 flex-shrink-0 ml-1 mt-0.5" />
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setEditingNotes({ id: l.id, type: 'lead', text: '' })}
+                                  className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>Add Private Note</span>
+                                </button>
+                              )}
                             </div>
                           </div>
 
                           {/* Actions */}
-                          <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-2">
+                          <div className="pt-4 mt-3 border-t border-border/60 flex items-center justify-between gap-2">
                             <button
                               onClick={() => exportSingleLeadPDF(l)}
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/15 hover:bg-red-600/25 border border-red-600/30 text-red-600 dark:text-red-400 text-xs font-bold transition-colors"
@@ -534,33 +745,77 @@ export default function AdminDashboardPage() {
                       return (
                         <div 
                           key={`feed-brief-${b.id}-${index}`}
-                          className="glass-panel rounded-3xl p-6 border border-border hover:border-emerald-500/50 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden"
+                          className="glass-panel rounded-3xl p-6 border border-border hover:border-emerald-500/50 transition-all flex flex-col justify-between shadow-lg relative overflow-hidden group"
                         >
-                          {/* Accent Pill */}
-                          <div className="flex items-center justify-between gap-2 mb-4">
-                            <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center gap-1">
-                              <FileSpreadsheet className="w-3 h-3" />
-                              <span>Project Brief (FRD)</span>
-                            </span>
-                            <span className="text-[10px] text-muted-foreground">
-                              {new Date(b.createdAt).toLocaleDateString()}
-                            </span>
-                          </div>
+                          <div>
+                            {/* Card Header Badge & Actions */}
+                            <div className="flex items-center justify-between gap-2 mb-4">
+                              <span className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 flex items-center gap-1">
+                                <FileSpreadsheet className="w-3 h-3" />
+                                <span>Project Brief (FRD)</span>
+                              </span>
 
-                          {/* Brief Details */}
-                          <div className="space-y-2 mb-4">
-                            <h3 className="font-serif text-xl font-bold text-foreground">{b.businessName}</h3>
-                            <div className="text-xs font-semibold text-primary">Contact: {b.yourName}</div>
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {b.description || 'Fullstack project scope requirement.'}
-                            </p>
-                            <div className="text-[11px] text-muted-foreground">
-                              <span className="font-semibold text-foreground">Style:</span> {b.designLook}
+                              <div className="flex items-center gap-1">
+                                <select
+                                  value={b.status}
+                                  onChange={(e) => handleUpdateBriefStatus(b.id, e.target.value as ProjectBrief['status'])}
+                                  className="text-[11px] font-semibold px-2 py-1 rounded-lg bg-secondary border border-border outline-none cursor-pointer"
+                                >
+                                  <option value="new">🟡 New</option>
+                                  <option value="reviewed">🔵 Reviewed</option>
+                                  <option value="in_progress">🟣 In Progress</option>
+                                  <option value="completed">🟢 Completed</option>
+                                  <option value="archived">📦 Archive</option>
+                                </select>
+
+                                <button
+                                  onClick={() => setDeleteTarget({ id: b.id, type: 'brief', name: b.businessName })}
+                                  className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                                  title="Delete Brief"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Brief Details */}
+                            <div className="space-y-2 mb-4">
+                              <h3 className="font-serif text-xl font-bold text-foreground">{b.businessName}</h3>
+                              <div className="text-xs font-semibold text-primary">Contact: {b.yourName}</div>
+                              <p className="text-xs text-muted-foreground line-clamp-2">
+                                {b.description || 'Fullstack project scope requirement.'}
+                              </p>
+                              <div className="text-[11px] text-muted-foreground">
+                                <span className="font-semibold text-foreground">Style:</span> {b.designLook}
+                              </div>
+                            </div>
+
+                            {/* Internal Notes Preview */}
+                            <div className="pt-2">
+                              {b.internalNotes ? (
+                                <div 
+                                  onClick={() => setEditingNotes({ id: b.id, type: 'brief', text: b.internalNotes || '' })}
+                                  className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-start justify-between cursor-pointer hover:bg-emerald-500/15 transition-colors"
+                                >
+                                  <div className="line-clamp-2 text-[11px]">
+                                    <strong>Private Note:</strong> {b.internalNotes}
+                                  </div>
+                                  <Edit3 className="w-3.5 h-3.5 flex-shrink-0 ml-1 mt-0.5" />
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setEditingNotes({ id: b.id, type: 'brief', text: '' })}
+                                  className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                  <span>Add Private Note</span>
+                                </button>
+                              )}
                             </div>
                           </div>
 
                           {/* Actions */}
-                          <div className="pt-4 border-t border-border/60 flex items-center justify-between gap-2">
+                          <div className="pt-4 mt-3 border-t border-border/60 flex items-center justify-between gap-2">
                             <button
                               onClick={() => setSelectedBrief(b)}
                               className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
@@ -609,7 +864,7 @@ export default function AdminDashboardPage() {
                       <th className="px-6 py-4">Client Name</th>
                       <th className="px-6 py-4">Contact Details</th>
                       <th className="px-6 py-4">Status Stage</th>
-                      <th className="px-6 py-4">Received Date</th>
+                      <th className="px-6 py-4">Internal Notes</th>
                       <th className="px-6 py-4">Export &amp; Connect</th>
                     </tr>
                   </thead>
@@ -617,7 +872,7 @@ export default function AdminDashboardPage() {
                     {filteredLeads.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
-                          No leads found matching your search.
+                          No leads found matching current filter.
                         </td>
                       </tr>
                     ) : (
@@ -641,28 +896,32 @@ export default function AdminDashboardPage() {
                             <select
                               value={lead.status}
                               onChange={(e) => handleUpdateLeadStatus(lead.id, e.target.value as Lead['status'])}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border outline-none cursor-pointer ${
-                                lead.status === 'new' 
-                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' 
-                                  : lead.status === 'contacted'
-                                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                                  : lead.status === 'converted'
-                                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
-                                  : 'bg-muted text-muted-foreground border-border'
-                              }`}
+                              className="px-3 py-1.5 rounded-xl text-xs font-semibold border outline-none cursor-pointer bg-secondary"
                             >
                               <option value="new">🟡 New Lead</option>
                               <option value="contacted">🔵 Contacted</option>
                               <option value="converted">🟢 Converted</option>
-                              <option value="closed">⚪ Closed</option>
+                              <option value="archived">📦 Archived</option>
                             </select>
                           </td>
-                          <td className="px-6 py-4 text-muted-foreground">
-                            {new Date(lead.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric'
-                            })}
+                          <td className="px-6 py-4 max-w-xs">
+                            {lead.internalNotes ? (
+                              <div 
+                                onClick={() => setEditingNotes({ id: lead.id, type: 'lead', text: lead.internalNotes || '' })}
+                                className="text-xs text-foreground cursor-pointer hover:text-primary transition-colors flex items-center gap-1"
+                              >
+                                <span className="truncate">{lead.internalNotes}</span>
+                                <Edit3 className="w-3 h-3 flex-shrink-0" />
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setEditingNotes({ id: lead.id, type: 'lead', text: '' })}
+                                className="text-[11px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                              >
+                                <Plus className="w-3 h-3" />
+                                <span>Add note</span>
+                              </button>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
@@ -684,6 +943,14 @@ export default function AdminDashboardPage() {
                               >
                                 <MessageSquare className="w-3.5 h-3.5" />
                               </a>
+
+                              <button
+                                onClick={() => setDeleteTarget({ id: lead.id, type: 'lead', name: lead.name })}
+                                className="p-2 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                title="Delete Lead"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -700,7 +967,7 @@ export default function AdminDashboardPage() {
             <div className="space-y-4">
               {filteredBriefs.length === 0 ? (
                 <div className="glass-panel rounded-3xl p-12 text-center text-muted-foreground border border-border">
-                  No project briefs found matching your search.
+                  No project briefs found matching current filter.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -716,16 +983,27 @@ export default function AdminDashboardPage() {
                             {b.designLook}
                           </span>
                           
-                          <select
-                            value={b.status}
-                            onChange={(e) => handleUpdateBriefStatus(b.id, e.target.value as ProjectBrief['status'])}
-                            className="text-xs font-semibold px-2 py-1 rounded-lg bg-secondary border border-border outline-none cursor-pointer"
-                          >
-                            <option value="new">🟡 New</option>
-                            <option value="reviewed">🔵 Reviewed</option>
-                            <option value="in-progress">🟣 In Progress</option>
-                            <option value="completed">🟢 Completed</option>
-                          </select>
+                          <div className="flex items-center gap-1">
+                            <select
+                              value={b.status}
+                              onChange={(e) => handleUpdateBriefStatus(b.id, e.target.value as ProjectBrief['status'])}
+                              className="text-xs font-semibold px-2 py-1 rounded-lg bg-secondary border border-border outline-none cursor-pointer"
+                            >
+                              <option value="new">🟡 New</option>
+                              <option value="reviewed">🔵 Reviewed</option>
+                              <option value="in_progress">🟣 In Progress</option>
+                              <option value="completed">🟢 Completed</option>
+                              <option value="archived">📦 Archive</option>
+                            </select>
+
+                            <button
+                              onClick={() => setDeleteTarget({ id: b.id, type: 'brief', name: b.businessName })}
+                              className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                              title="Delete Brief"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
                         {/* Title & Contact */}
@@ -743,18 +1021,27 @@ export default function AdminDashboardPage() {
                           {b.description || 'No business description provided.'}
                         </p>
 
-                        {/* Key Info Preview */}
-                        <div className="pt-2 border-t border-border/40 space-y-1.5 text-xs text-muted-foreground">
-                          <div className="flex justify-between">
-                            <span>Goals:</span>
-                            <span className="font-medium text-foreground truncate max-w-[180px]">
-                              {Array.isArray(b.goals) ? b.goals.join(', ') : b.goals}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Colors:</span>
-                            <span className="font-medium text-foreground">{b.primaryColor || 'Default'}</span>
-                          </div>
+                        {/* Internal Notes */}
+                        <div className="pt-1">
+                          {b.internalNotes ? (
+                            <div 
+                              onClick={() => setEditingNotes({ id: b.id, type: 'brief', text: b.internalNotes || '' })}
+                              className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-700 dark:text-emerald-300 flex items-start justify-between cursor-pointer hover:bg-emerald-500/15 transition-colors"
+                            >
+                              <div className="line-clamp-2 text-[11px]">
+                                <strong>Private Note:</strong> {b.internalNotes}
+                              </div>
+                              <Edit3 className="w-3.5 h-3.5 flex-shrink-0 ml-1 mt-0.5" />
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setEditingNotes({ id: b.id, type: 'brief', text: '' })}
+                              className="text-[11px] font-semibold text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                            >
+                              <Plus className="w-3 h-3" />
+                              <span>Add Private Note</span>
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -798,6 +1085,101 @@ export default function AdminDashboardPage() {
 
         </div>
       </main>
+
+      {/* MODAL: EDIT INTERNAL PRIVATE NOTES */}
+      {editingNotes && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setEditingNotes(null)}
+        >
+          <div 
+            className="w-full max-w-md bg-card border border-border rounded-3xl p-6 shadow-2xl glass-panel space-y-4 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-border/80">
+              <div className="flex items-center gap-2 font-serif text-lg font-bold text-foreground">
+                <Edit3 className="w-5 h-5 text-primary" />
+                <span>Private Follow-Up Notes</span>
+              </div>
+              <button 
+                onClick={() => setEditingNotes(null)}
+                className="p-1 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              These notes are private to you as the administrator and will be saved in your database and included in your export records.
+            </p>
+
+            <textarea
+              rows={4}
+              autoFocus
+              placeholder="e.g. Discussed scope on WhatsApp. Client requested custom PWA with offline caching. Follow-up scheduled for Friday..."
+              value={editingNotes.text}
+              onChange={(e) => setEditingNotes({ ...editingNotes, text: e.target.value })}
+              className="w-full p-3 rounded-2xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs text-foreground resize-none"
+            />
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => setEditingNotes(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-muted-foreground hover:bg-secondary transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveNotes}
+                className="px-4 py-2 rounded-xl bg-primary hover:bg-blue-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-md shadow-primary/20 transition-all"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span>Save Notes</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: DELETE CONFIRMATION */}
+      {deleteTarget && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div 
+            className="w-full max-w-sm bg-card border border-destructive/40 rounded-3xl p-6 shadow-2xl glass-panel space-y-4 text-center animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-12 h-12 rounded-2xl bg-destructive/15 text-destructive flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="font-serif text-lg font-bold text-foreground">Confirm Deletion</h3>
+              <p className="text-xs text-muted-foreground">
+                Are you sure you want to permanently delete <strong className="text-foreground">{deleteTarget.name}</strong>? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 rounded-xl text-xs font-semibold text-foreground bg-secondary hover:bg-secondary/80 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 py-2.5 rounded-xl bg-destructive hover:bg-red-600 text-white text-xs font-bold shadow-md transition-all flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* DETAILED PROJECT BRIEF MODAL VIEW */}
       {selectedBrief && (
@@ -889,6 +1271,15 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               </div>
+
+              {selectedBrief.internalNotes && (
+                <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 space-y-1">
+                  <div className="font-bold text-emerald-700 dark:text-emerald-300 text-xs uppercase tracking-wider">
+                    5. Private Admin Notes
+                  </div>
+                  <p className="text-foreground">{selectedBrief.internalNotes}</p>
+                </div>
+              )}
             </div>
 
             {/* Modal Bottom Actions */}
