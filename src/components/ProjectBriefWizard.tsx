@@ -178,7 +178,7 @@ export function ProjectBriefWizard() {
           hasContent: formData.hasContent,
           hasDomain: formData.hasDomain,
         });
-        fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: payload });
+        fetch(`${SCRIPT_URL}?${payload.toString()}`, { method: 'GET', mode: 'no-cors' });
       } catch {
         // non-blocking fallback
       }

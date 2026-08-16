@@ -2,55 +2,68 @@ import fs from 'fs';
 import path from 'path';
 import { Lead, ProjectBrief, AnalyticsEvent } from './types';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const isVercel = Boolean(process.env.VERCEL || process.env.NEXT_RUNTIME === 'nodejs' && process.env.NODE_ENV === 'production' && !process.env.LOCAL_DEV);
+const DATA_DIR = isVercel ? '/tmp' : path.join(process.cwd(), 'data');
+const SEED_DIR = path.join(process.cwd(), 'data');
 const LEADS_FILE = path.join(DATA_DIR, 'leads.json');
 const BRIEFS_FILE = path.join(DATA_DIR, 'briefs.json');
 const ANALYTICS_FILE = path.join(DATA_DIR, 'analytics.json');
 
+// In-memory fallback cache for serverless environments
+let memoryLeads: Lead[] = [];
+let memoryBriefs: ProjectBrief[] = [];
+
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch {
+    // fallback to memory
   }
-  if (!fs.existsSync(LEADS_FILE)) {
-    fs.writeFileSync(LEADS_FILE, JSON.stringify([
-      {
-        id: 'lead-demo-1',
-        name: 'Alex Vance',
-        email: 'alex.vance@techcorp.io',
-        phone: '+91 9876543210',
-        source: 'Website Contact Form',
-        status: 'contacted',
-        createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-        notes: 'Interested in full agency redesign + custom web app'
+
+  try {
+    if (!fs.existsSync(LEADS_FILE)) {
+      let initialData: Lead[] = [];
+      const seedFile = path.join(SEED_DIR, 'leads.json');
+      if (fs.existsSync(seedFile)) {
+        try {
+          initialData = JSON.parse(fs.readFileSync(seedFile, 'utf-8'));
+        } catch {
+          initialData = [];
+        }
       }
-    ], null, 2));
+      fs.writeFileSync(LEADS_FILE, JSON.stringify(initialData, null, 2));
+      memoryLeads = initialData;
+    }
+  } catch {
+    // ignore
   }
-  if (!fs.existsSync(BRIEFS_FILE)) {
-    fs.writeFileSync(BRIEFS_FILE, JSON.stringify([
-      {
-        id: 'brief-demo-1',
-        businessName: 'VentureScale Analytics',
-        yourName: 'Samantha Green',
-        email: 'samantha@venturescale.co',
-        phone: '+91 9845123456',
-        description: 'Next-gen analytics platform for enterprise B2B SaaS teams.',
-        goals: ['Build a brand', 'Promote business', 'Sell products'],
-        audienceGender: 'All',
-        audienceAge: '24-50',
-        designLook: 'Modern & minimalist',
-        primaryColor: '#2563eb (Royal Blue)',
-        secondaryColor: '#0f172a (Slate Dark)',
-        colorTheme: 'Dark theme',
-        keyFeatures: ['Multi interlinked pages', 'Customer response form'],
-        hasContent: 'Yes',
-        hasDomain: 'Yes',
-        status: 'reviewed',
-        createdAt: new Date(Date.now() - 86400000).toISOString()
+
+  try {
+    if (!fs.existsSync(BRIEFS_FILE)) {
+      let initialBriefs: ProjectBrief[] = [];
+      const seedBriefsFile = path.join(SEED_DIR, 'briefs.json');
+      if (fs.existsSync(seedBriefsFile)) {
+        try {
+          initialBriefs = JSON.parse(fs.readFileSync(seedBriefsFile, 'utf-8'));
+        } catch {
+          initialBriefs = [];
+        }
       }
-    ], null, 2));
+      fs.writeFileSync(BRIEFS_FILE, JSON.stringify(initialBriefs, null, 2));
+      memoryBriefs = initialBriefs;
+    }
+  } catch {
+    // ignore
   }
-  if (!fs.existsSync(ANALYTICS_FILE)) {
-    fs.writeFileSync(ANALYTICS_FILE, JSON.stringify([], null, 2));
+
+  try {
+    if (!fs.existsSync(ANALYTICS_FILE)) {
+      fs.writeFileSync(ANALYTICS_FILE, JSON.stringify([], null, 2));
+    }
+  } catch {
+    // ignore
   }
 }
 
@@ -58,11 +71,18 @@ function ensureDataDir() {
 export function getLeads(): Lead[] {
   ensureDataDir();
   try {
-    const data = fs.readFileSync(LEADS_FILE, 'utf-8');
-    return JSON.parse(data);
+    if (fs.existsSync(LEADS_FILE)) {
+      const data = fs.readFileSync(LEADS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryLeads = parsed;
+        return parsed;
+      }
+    }
   } catch {
-    return [];
+    // fallback
   }
+  return memoryLeads;
 }
 
 export function saveLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'status'>): Lead {
@@ -75,7 +95,12 @@ export function saveLead(leadData: Omit<Lead, 'id' | 'createdAt' | 'status'>): L
     createdAt: new Date().toISOString(),
   };
   leads.unshift(newLead);
-  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // non-blocking fallback
+  }
   return newLead;
 }
 
@@ -88,7 +113,12 @@ export function updateLeadStatus(id: string, status: Lead['status'], notes?: str
   if (notes !== undefined) {
     leads[index].notes = notes;
   }
-  fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  memoryLeads = leads;
+  try {
+    fs.writeFileSync(LEADS_FILE, JSON.stringify(leads, null, 2));
+  } catch {
+    // non-blocking
+  }
   return true;
 }
 
@@ -96,11 +126,18 @@ export function updateLeadStatus(id: string, status: Lead['status'], notes?: str
 export function getBriefs(): ProjectBrief[] {
   ensureDataDir();
   try {
-    const data = fs.readFileSync(BRIEFS_FILE, 'utf-8');
-    return JSON.parse(data);
+    if (fs.existsSync(BRIEFS_FILE)) {
+      const data = fs.readFileSync(BRIEFS_FILE, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryBriefs = parsed;
+        return parsed;
+      }
+    }
   } catch {
-    return [];
+    // fallback
   }
+  return memoryBriefs;
 }
 
 export function saveBrief(briefData: Omit<ProjectBrief, 'id' | 'createdAt' | 'status'>): ProjectBrief {
@@ -113,7 +150,12 @@ export function saveBrief(briefData: Omit<ProjectBrief, 'id' | 'createdAt' | 'st
     createdAt: new Date().toISOString(),
   };
   briefs.unshift(newBrief);
-  fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // non-blocking
+  }
   return newBrief;
 }
 
@@ -123,7 +165,12 @@ export function updateBriefStatus(id: string, status: ProjectBrief['status']): b
   const index = briefs.findIndex(b => b.id === id);
   if (index === -1) return false;
   briefs[index].status = status;
-  fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  memoryBriefs = briefs;
+  try {
+    fs.writeFileSync(BRIEFS_FILE, JSON.stringify(briefs, null, 2));
+  } catch {
+    // non-blocking
+  }
   return true;
 }
 
@@ -139,10 +186,9 @@ export function logAnalytics(event: string, pathName: string, metadata?: Record<
       timestamp: new Date().toISOString(),
       metadata,
     });
-    // keep latest 500 events
     if (events.length > 500) events.length = 500;
     fs.writeFileSync(ANALYTICS_FILE, JSON.stringify(events, null, 2));
   } catch {
-    // silently catch logging errors
+    // non-blocking
   }
 }
