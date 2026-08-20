@@ -10,12 +10,9 @@ import {
   Menu, 
   X, 
   Search, 
-  Sparkles, 
-  Compass, 
   ArrowRight,
-  Phone,
-  MessageSquare,
-  Lock
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 
 export function Navbar() {
@@ -25,7 +22,7 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      setIsScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -33,71 +30,76 @@ export function Navbar() {
 
   const navLinks = [
     { label: 'Services', href: '/#services' },
-    { label: 'Flagship Product', href: '/#featured-product', badge: 'Trip Tools' },
+    { label: 'Trip Tools', href: '/#featured-product', isFeatured: true },
     { label: 'Process', href: '/#process' },
     { label: 'Case Studies', href: '/#case-studies' },
-    { label: 'Audit & Tech Lab', href: '/#interactive-lab' },
-    { label: 'Project Brief', href: '/#brief-wizard' },
+    { label: 'Audit Lab', href: '/#interactive-lab' },
   ];
 
   return (
     <>
       <header 
-        className={`sticky top-0 z-40 w-full transition-all duration-300 ${
+        className={`sticky top-0 z-40 w-full transition-all duration-200 ${
           isScrolled 
-            ? 'glass-panel shadow-lg shadow-black/5 py-3 border-b border-border/70' 
-            : 'bg-background/80 backdrop-blur-md py-4 border-b border-transparent'
+            ? 'glass-panel shadow-sm py-2.5 border-b border-border/80' 
+            : 'bg-background/80 backdrop-blur-md py-3.5 border-b border-border/40'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
           
-          {/* Logo */}
+          {/* Logo & Identity */}
           <Link 
             href="/" 
-            className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+            className="flex items-center gap-2.5 group focus:outline-none rounded-lg"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-blue-400 flex items-center justify-center text-white shadow-md shadow-primary/25 group-hover:scale-105 transition-transform duration-200">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shadow-sm group-hover:bg-primary group-hover:text-white transition-all duration-200">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div className="flex flex-col">
-              <span className="font-serif font-bold text-xl tracking-tight text-foreground group-hover:text-primary transition-colors">
-                ApexAssure
-              </span>
-              <span className="text-[10px] tracking-wider uppercase font-semibold text-muted-foreground -mt-1">
-                Studio &bull; Bharathkumar E
+              <div className="flex items-center gap-1.5">
+                <span className="font-serif font-bold text-lg tracking-tight text-foreground group-hover:text-primary transition-colors">
+                  ApexAssure
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+              </div>
+              <span className="text-[10px] tracking-wider uppercase font-medium text-muted-foreground -mt-0.5">
+                Bharathkumar E
               </span>
             </div>
           </Link>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1 xl:gap-2">
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="px-3.5 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-all flex items-center gap-1.5"
+                className={`px-3.5 py-1.5 rounded-lg text-xs lg:text-sm font-medium transition-all flex items-center gap-1.5 ${
+                  link.isFeatured
+                    ? 'text-foreground hover:text-emerald-600 dark:hover:text-emerald-400 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'
+                }`}
               >
-                {link.label}
-                {link.badge && (
-                  <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-500/20">
-                    {link.badge}
-                  </span>
+                <span>{link.label}</span>
+                {link.isFeatured && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 )}
               </Link>
             ))}
           </nav>
 
-          {/* Desktop Actions */}
+          {/* Desktop Right Actions */}
           <div className="hidden sm:flex items-center gap-2.5">
-            {/* Command Palette Trigger */}
+            {/* Minimalist Search Button */}
             <button
               onClick={() => setCmdOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-border/60 text-xs text-muted-foreground hover:text-foreground transition-all"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-secondary/60 hover:bg-secondary border border-border/70 text-xs text-muted-foreground hover:text-foreground transition-all cursor-pointer"
               aria-label="Search and command palette"
+              title="Search (Ctrl + K)"
             >
               <Search className="w-3.5 h-3.5" />
-              <span>Search...</span>
-              <kbd className="px-1.5 py-0.5 text-[10px] bg-card border border-border rounded text-muted-foreground font-mono">
+              <span className="hidden lg:inline text-xs">Search</span>
+              <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] bg-background border border-border/80 rounded text-muted-foreground font-mono">
                 ⌘K
               </kbd>
             </button>
@@ -105,22 +107,22 @@ export function Navbar() {
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Primary CTA */}
+            {/* Professional Primary CTA */}
             <Link
               href="/#brief-wizard"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-blue-600 text-white text-xs font-semibold uppercase tracking-wider shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/35 hover:-translate-y-0.5 active:translate-y-0 transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary hover:bg-blue-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all"
             >
-              <span>Let&rsquo;s Grow</span>
+              <span>Start Project</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
           {/* Mobile Right Controls */}
-          <div className="flex sm:hidden items-center gap-2">
+          <div className="flex sm:hidden items-center gap-1.5">
             <button
               onClick={() => setCmdOpen(true)}
               aria-label="Search"
-              className="p-2 rounded-xl bg-secondary/80 text-foreground border border-border/60"
+              className="p-2 rounded-xl bg-secondary/80 text-foreground border border-border/60 active:scale-95 transition-transform"
             >
               <Search className="w-4 h-4" />
             </button>
@@ -129,7 +131,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle Navigation Menu"
               aria-expanded={mobileMenuOpen}
-              className="p-2 rounded-xl bg-secondary/80 text-foreground border border-border/60 hover:bg-secondary focus:outline-none"
+              className="p-2 rounded-xl bg-secondary/80 text-foreground border border-border/60 hover:bg-secondary active:scale-95 transition-transform"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -137,44 +139,45 @@ export function Navbar() {
 
         </div>
 
-        {/* Mobile Slide-down Drawer */}
+        {/* Mobile Slide-down Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden glass-panel border-b border-border/80 px-4 pt-4 pb-6 mt-3 space-y-2 animate-in slide-in-from-top-4 duration-200">
+          <div className="md:hidden glass-panel border-b border-border/80 px-4 pt-3 pb-5 mt-2 space-y-3 animate-in slide-in-from-top-3 duration-200">
             <div className="space-y-1">
               {navLinks.map((link) => (
                 <Link
                   key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 rounded-xl text-base font-medium text-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  className="flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium text-foreground hover:bg-secondary/70 transition-colors"
                 >
-                  <span>{link.label}</span>
-                  {link.badge ? (
-                    <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-500/20">
-                      {link.badge}
-                    </span>
-                  ) : (
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                  )}
+                  <div className="flex items-center gap-2">
+                    <span>{link.label}</span>
+                    {link.isFeatured && (
+                      <span className="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                        Live Web App
+                      </span>
+                    )}
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-muted-foreground" />
                 </Link>
               ))}
             </div>
 
-            <div className="pt-4 border-t border-border/60 flex flex-col gap-2.5">
+            <div className="pt-3 border-t border-border/60 flex flex-col gap-2">
               <Link
                 href="/products/trip-tools"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-semibold text-sm"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-semibold transition-colors"
               >
-                <Compass className="w-4 h-4 text-emerald-500" />
-                <span>Explore Trip Tools Product &rarr;</span>
+                <span>Trip Tools Case Study</span>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground" />
               </Link>
               <Link
                 href="/#brief-wizard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm shadow-md shadow-primary/20"
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-semibold text-xs shadow-sm transition-all"
               >
-                <Sparkles className="w-4 h-4" />
+                <Sparkles className="w-3.5 h-3.5" />
                 <span>Start Project Brief (FRD)</span>
               </Link>
             </div>
