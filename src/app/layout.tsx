@@ -48,6 +48,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ThemeStudioModal } from '@/components/ThemeStudioModal';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,7 +58,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable}`}>
       <body className="font-sans min-h-screen flex flex-col bg-background text-foreground selection:bg-primary/20 selection:text-primary transition-colors duration-300">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <ThemeStudioModal />
+        </ThemeProvider>
       </body>
     </html>
   );

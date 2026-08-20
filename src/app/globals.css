@@ -124,3 +124,67 @@
     padding-bottom: 0px;
   }
 }
+
+/* ==================================================== */
+/* STUDIO THEME RESKINNER PALETTE PRESETS (CSS VARIABLES) */
+/* ==================================================== */
+
+/* 1. Emerald Rainforest (Trip Tools Nature & Growth) */
+[data-accent="emerald"] {
+  --primary: 152 76% 38%;
+  --ring: 152 76% 38%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+}
+.dark[data-accent="emerald"], [data-accent="emerald"] .dark, html.dark[data-accent="emerald"] {
+  --primary: 158 64% 50%;
+  --ring: 158 64% 50%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
+}
+
+/* 2. Cyberpunk Neon (Electric Violet & Cyan) */
+[data-accent="cyberpunk"] {
+  --primary: 271 91% 55%;
+  --ring: 271 91% 55%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15) 0%, transparent 70%);
+}
+.dark[data-accent="cyberpunk"], [data-accent="cyberpunk"] .dark, html.dark[data-accent="cyberpunk"] {
+  --primary: 271 91% 65%;
+  --ring: 271 91% 65%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.22) 0%, transparent 70%);
+}
+
+/* 3. Obsidian Luxe Gold (Executive High-Ticket) */
+[data-accent="gold"] {
+  --primary: 38 92% 44%;
+  --ring: 38 92% 44%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.15) 0%, transparent 70%);
+}
+.dark[data-accent="gold"], [data-accent="gold"] .dark, html.dark[data-accent="gold"] {
+  --primary: 43 96% 56%;
+  --ring: 43 96% 56%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.22) 0%, transparent 70%);
+}
+
+/* 4. Matrix Terminal (Phosphor Green Tech) */
+[data-accent="matrix"] {
+  --primary: 142 76% 36%;
+  --ring: 142 76% 36%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 70%);
+}
+.dark[data-accent="matrix"], [data-accent="matrix"] .dark, html.dark[data-accent="matrix"] {
+  --primary: 142 86% 48%;
+  --ring: 142 86% 48%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.22) 0%, transparent 70%);
+}
+
+/* 5. Crimson Velocity (Ruby Red Energy) */
+[data-accent="crimson"] {
+  --primary: 350 89% 52%;
+  --ring: 350 89% 52%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.15) 0%, transparent 70%);
+}
+.dark[data-accent="crimson"], [data-accent="crimson"] .dark, html.dark[data-accent="crimson"] {
+  --primary: 350 89% 60%;
+  --ring: 350 89% 60%;
+  --hero-glow: radial-gradient(circle at 50% 0%, rgba(244, 63, 94, 0.22) 0%, transparent 70%);
+}

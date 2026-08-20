@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ThemeToggle } from './ThemeToggle';
 import { CommandPalette } from './CommandPalette';
 import { AdminPinModal } from './AdminPinModal';
+import { useTheme } from './ThemeProvider';
 import { 
   ShieldCheck, 
   Menu, 
@@ -12,10 +13,12 @@ import {
   Search, 
   ArrowRight,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Palette
 } from 'lucide-react';
 
 export function Navbar() {
+  const { setIsStudioOpen } = useTheme();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -104,6 +107,16 @@ export function Navbar() {
               </kbd>
             </button>
 
+            {/* Theme Studio Palette Trigger */}
+            <button
+              onClick={() => setIsStudioOpen(true)}
+              className="p-2 rounded-xl bg-secondary/60 hover:bg-secondary border border-border/70 text-foreground hover:text-primary transition-all cursor-pointer"
+              title="Open Theme Studio Reskinner"
+              aria-label="Open Theme Studio Reskinner"
+            >
+              <Palette className="w-4 h-4" />
+            </button>
+
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -119,6 +132,13 @@ export function Navbar() {
 
           {/* Mobile Right Controls */}
           <div className="flex sm:hidden items-center gap-1.5">
+            <button
+              onClick={() => setIsStudioOpen(true)}
+              aria-label="Theme Studio"
+              className="p-2 rounded-xl bg-secondary/80 text-foreground border border-border/60 active:scale-95 transition-transform"
+            >
+              <Palette className="w-4 h-4 text-primary" />
+            </button>
             <button
               onClick={() => setCmdOpen(true)}
               aria-label="Search"
