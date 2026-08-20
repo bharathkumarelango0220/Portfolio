@@ -242,7 +242,7 @@ export function ProjectBriefWizard() {
                   Step {step} of {totalSteps}: {stepTitles[step - 1]}
                 </div>
                 <div className="text-xs font-semibold text-muted-foreground font-mono">
-                  {Math.round((step / totalSteps) * 100)}% Completed
+                  {Math.round(((step - 1) / (totalSteps - 1)) * 100)}% Completed
                 </div>
               </div>
 
@@ -250,7 +250,7 @@ export function ProjectBriefWizard() {
               <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-8">
                 <div 
                   className="bg-gradient-to-r from-primary to-blue-400 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(step / totalSteps) * 100}%` }}
+                  style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}
                 />
               </div>
 
