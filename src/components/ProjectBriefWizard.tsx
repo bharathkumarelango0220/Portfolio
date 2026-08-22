@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { exportSingleBriefPDF } from '@/lib/pdfGenerator';
 import { 
@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 
 export function ProjectBriefWizard() {
+  const wizardRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState(1);
   const totalSteps = 6;
   const stepTitles = [
@@ -33,6 +34,10 @@ export function ProjectBriefWizard() {
     'Features & Readiness',
     'Review & Submit',
   ];
+
+  // Touch Swipe Gesture tracking
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
+  const [touchEndX, setTouchEndX] = useState<number | null>(null);
 
   const initialFormState = {
     businessName: '',
@@ -97,6 +102,12 @@ export function ProjectBriefWizard() {
     });
   };
 
+  const scrollToWizardTop = () => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768 && wizardRef.current) {
+      wizardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   const validateCurrentStep = () => {
     if (step === 1) {
       if (!formData.businessName.trim()) {
@@ -132,12 +143,41 @@ export function ProjectBriefWizard() {
 
   const nextStep = () => {
     if (!validateCurrentStep()) return;
-    if (step < totalSteps) setStep(step + 1);
+    if (step < totalSteps) {
+      setStep(step + 1);
+      scrollToWizardTop();
+    }
   };
 
   const prevStep = () => {
     setErrorMsg('');
-    if (step > 1) setStep(step - 1);
+    if (step > 1) {
+      setStep(step - 1);
+      scrollToWizardTop();
+    }
+  };
+
+  // Touch Swipe Handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchEndX(null);
+    setTouchStartX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null) return;
+    const distance = touchStartX - touchEndX;
+    const isLeftSwipe = distance > 60;
+    const isRightSwipe = distance < -60;
+
+    if (isLeftSwipe && step < totalSteps) {
+      nextStep();
+    } else if (isRightSwipe && step > 1) {
+      prevStep();
+    }
   };
 
   const handleDownloadPDF = () => {
@@ -159,80 +199,64 @@ export function ProjectBriefWizard() {
         body: JSON.stringify(formData),
       });
 
-      // 2. Asynchronous sync with Google Apps Script endpoint
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8WDqzf1om_QrqZE0BuSXL_gBIvATB56-hEIjFMjJGWUmczrNzBcuW79HRYrNbp8tNSw/exec";
-      try {
-        const payload = new URLSearchParams({
-          formType: 'frd',
-          businessName: formData.businessName,
-          yourName: formData.yourName,
-          email: formData.email,
-          phone: formData.phone,
-          description: formData.description,
-          goals: formData.goals.join(', '),
-          audienceGender: formData.audienceGender,
-          audienceAge: formData.audienceAge,
-          designLook: formData.designLook,
-          primaryColor: formData.primaryColor,
-          secondaryColor: formData.secondaryColor,
-          colorTheme: formData.colorTheme,
-          keyFeatures: formData.keyFeatures.join(', '),
-          hasContent: formData.hasContent,
-          hasDomain: formData.hasDomain,
-        });
-        fetch(`${SCRIPT_URL}?${payload.toString()}`, { method: 'GET', mode: 'no-cors' });
-      } catch {
-        // non-blocking fallback
+      if (!res.ok) {
+        throw new Error('Failed to record project brief. Please try again.');
       }
 
-      if (res.ok) {
-        setSubmitted(true);
-        try {
-          localStorage.removeItem('apexassure-brief-draft');
-        } catch {
-          // ignore
-        }
-        // Trigger celebratory confetti
+      // 2. Fire celebration confetti
+      try {
         confetti({
-          particleCount: 120,
-          spread: 80,
+          particleCount: 100,
+          spread: 70,
           origin: { y: 0.6 },
         });
-      } else {
-        throw new Error('Server submission error');
+      } catch {
+        // ignore
       }
-    } catch {
-      setErrorMsg('Failed to submit brief. Please check your internet connection or reach out on WhatsApp.');
+
+      setSubmitted(true);
+      scrollToWizardTop();
+
+      // Clear draft storage
+      try {
+        localStorage.removeItem('apexassure-brief-draft');
+      } catch {
+        // ignore
+      }
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'Network error submitting brief.');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <section id="brief-wizard" className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-background via-secondary/20 to-background">
+    <section id="brief-wizard" ref={wizardRef} className="py-12 sm:py-16 md:py-24 bg-card/40 relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold tracking-wide uppercase">
+        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold uppercase tracking-wider">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Interactive Project Brief (FRD)</span>
+            <span>Interactive Scope Blueprint</span>
           </div>
-
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-            Start Your Custom Project{' '}
-            <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-500 bg-clip-text text-transparent">
-              Risk-Free
-            </span>
+          
+          <h2 className="font-serif text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground">
+            Generate Your Project Brief (FRD)
           </h2>
-
-          <p className="text-sm sm:text-base text-muted-foreground">
+          
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Tell us about your brand vision, goals, and preferred features. No budget barriers, no guesswork — takes just 2 minutes.
           </p>
         </div>
 
-        {/* Wizard Card Container */}
-        <div className="glass-panel rounded-3xl p-6 sm:p-10 border border-border shadow-2xl relative">
+        {/* Wizard Card Container with Swipe Gestures */}
+        <div 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="glass-panel rounded-3xl p-5 sm:p-8 md:p-10 border border-border shadow-2xl relative select-none"
+        >
           
           {!submitted ? (
             <div>
@@ -247,16 +271,21 @@ export function ProjectBriefWizard() {
               </div>
 
               {/* Progress Bar */}
-              <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-8">
+              <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-6 sm:mb-8">
                 <div 
                   className="bg-gradient-to-r from-primary to-blue-400 h-full rounded-full transition-all duration-300"
                   style={{ width: `${((step - 1) / (totalSteps - 1)) * 100}%` }}
                 />
               </div>
 
+              {/* Mobile Swipe Hint */}
+              <div className="sm:hidden text-center -mt-4 mb-4 text-[10px] text-muted-foreground/70 font-medium">
+                👉 Swipe left/right to switch steps
+              </div>
+
               {/* Error Notification */}
               {errorMsg && (
-                <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-3 text-xs font-medium animate-in fade-in">
+                <div className="mb-6 p-3.5 sm:p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-destructive flex items-center gap-2.5 text-xs font-medium animate-in fade-in">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
@@ -264,23 +293,25 @@ export function ProjectBriefWizard() {
 
               {/* STEP 1: About You */}
               {step === 1 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Tell us about yourself</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">Tell us about yourself</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Let&rsquo;s start with your business and contact information.</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                         Business / Brand Name *
                       </label>
                       <input
                         type="text"
+                        inputMode="text"
+                        autoComplete="organization"
                         placeholder="Enter your business or brand name"
                         value={formData.businessName}
                         onChange={(e) => updateField('businessName', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
 
@@ -290,25 +321,29 @@ export function ProjectBriefWizard() {
                       </label>
                       <input
                         type="text"
+                        inputMode="text"
+                        autoComplete="name"
                         placeholder="Enter your full name"
                         value={formData.yourName}
                         onChange={(e) => updateField('yourName', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                         Email Address *
                       </label>
                       <input
                         type="email"
+                        inputMode="email"
+                        autoComplete="email"
                         placeholder="Enter your email address"
                         value={formData.email}
                         onChange={(e) => updateField('email', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
 
@@ -318,10 +353,12 @@ export function ProjectBriefWizard() {
                       </label>
                       <input
                         type="tel"
+                        inputMode="tel"
+                        autoComplete="tel"
                         placeholder="Enter your phone / WhatsApp number"
                         value={formData.phone}
                         onChange={(e) => updateField('phone', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
                   </div>
@@ -330,9 +367,9 @@ export function ProjectBriefWizard() {
 
               {/* STEP 2: About Your Business */}
               {step === 2 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">About Your Business &amp; Objectives</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">About Your Business &amp; Objectives</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">What does your company do, and what are your primary targets?</p>
                   </div>
 
@@ -342,10 +379,11 @@ export function ProjectBriefWizard() {
                     </label>
                     <textarea
                       rows={3}
+                      inputMode="text"
                       placeholder="Describe your business, products, or services..."
                       value={formData.description}
                       onChange={(e) => updateField('description', e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground resize-none"
+                      className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground resize-none"
                     />
                   </div>
 
@@ -353,7 +391,7 @@ export function ProjectBriefWizard() {
                     <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Key Goals &amp; Objectives (Select all that apply)
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                       {[
                         'Promote business',
                         'Build a brand',
@@ -368,7 +406,7 @@ export function ProjectBriefWizard() {
                             type="button"
                             key={goal}
                             onClick={() => toggleArrayItem('goals', goal)}
-                            className={`p-3 rounded-xl text-xs font-semibold border flex items-center justify-between text-left transition-all ${
+                            className={`p-3 rounded-xl text-xs font-semibold border flex items-center justify-between transition-all ${
                               active
                                 ? 'bg-primary/10 border-primary text-primary'
                                 : 'bg-background border-border text-muted-foreground hover:border-primary/50'
@@ -386,13 +424,13 @@ export function ProjectBriefWizard() {
 
               {/* STEP 3: Target Audience */}
               {step === 3 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Target Audience &amp; Demographics</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">Target Audience &amp; Demographics</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Who will be using and browsing your website?</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                         Target Gender Demographics
@@ -403,7 +441,7 @@ export function ProjectBriefWizard() {
                             type="button"
                             key={g}
                             onClick={() => updateField('audienceGender', g)}
-                            className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                            className={`py-2.5 px-2.5 sm:px-3 rounded-xl text-xs font-semibold border transition-all ${
                               formData.audienceGender === g
                                 ? 'bg-primary text-white border-primary shadow-sm'
                                 : 'bg-background border-border text-muted-foreground hover:bg-secondary'
@@ -421,10 +459,11 @@ export function ProjectBriefWizard() {
                       </label>
                       <input
                         type="text"
+                        inputMode="text"
                         placeholder="e.g. All ages, 18-35, 25-50"
                         value={formData.audienceAge}
                         onChange={(e) => updateField('audienceAge', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
                   </div>
@@ -433,9 +472,9 @@ export function ProjectBriefWizard() {
 
               {/* STEP 4: Design & Aesthetic */}
               {step === 4 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Visual Style &amp; Brand Feel</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">Visual Style &amp; Brand Feel</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Select the artistic direction and color aesthetics.</p>
                   </div>
 
@@ -443,7 +482,7 @@ export function ProjectBriefWizard() {
                     <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Visual Direction
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
                       {[
                         { title: 'Modern & Minimalist', desc: 'Clean whitespace, elegant typography' },
                         { title: 'Corporate & Executive', desc: 'Trustworthy, formal, structured layout' },
@@ -453,7 +492,7 @@ export function ProjectBriefWizard() {
                           type="button"
                           key={dir.title}
                           onClick={() => updateField('designLook', dir.title)}
-                          className={`p-4 rounded-xl text-left border transition-all ${
+                          className={`p-3.5 sm:p-4 rounded-xl text-left border transition-all ${
                             formData.designLook === dir.title
                               ? 'bg-primary/10 border-primary text-primary'
                               : 'bg-background border-border text-foreground hover:border-primary/50'
@@ -466,17 +505,18 @@ export function ProjectBriefWizard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                         Preferred Primary Colour
                       </label>
                       <input
                         type="text"
+                        inputMode="text"
                         placeholder="e.g. Royal Blue, Emerald Green, Slate"
                         value={formData.primaryColor}
                         onChange={(e) => updateField('primaryColor', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
 
@@ -486,10 +526,11 @@ export function ProjectBriefWizard() {
                       </label>
                       <input
                         type="text"
+                        inputMode="text"
                         placeholder="e.g. Dark Slate, Gold, White"
                         value={formData.secondaryColor}
                         onChange={(e) => updateField('secondaryColor', e.target.value)}
-                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-sm text-foreground"
+                        className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                       />
                     </div>
                   </div>
@@ -504,7 +545,7 @@ export function ProjectBriefWizard() {
                           type="button"
                           key={t}
                           onClick={() => updateField('colorTheme', t)}
-                          className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                          className={`py-2 px-2.5 sm:px-3 rounded-xl text-xs font-semibold border transition-all ${
                             formData.colorTheme === t
                               ? 'bg-primary text-white border-primary'
                               : 'bg-background border-border text-muted-foreground hover:bg-secondary'
@@ -518,11 +559,11 @@ export function ProjectBriefWizard() {
                 </div>
               )}
 
-              {/* STEP 5: Features & Readiness */}
+              {/* STEP 5: Features & Technical Scope */}
               {step === 5 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Technical Features &amp; Readiness</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">Technical Features &amp; Readiness</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Select required website capabilities and project readiness.</p>
                   </div>
 
@@ -530,7 +571,7 @@ export function ProjectBriefWizard() {
                     <label className="text-xs font-bold uppercase tracking-wider text-foreground">
                       Key Technical Features
                     </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                       {[
                         'Multi interlinked pages',
                         'Customer response form',
@@ -561,18 +602,18 @@ export function ProjectBriefWizard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 pt-2">
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
-                        Do you have content / logo ready?
+                        Do you have ready content / copy?
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['Yes', 'No (Need ApexAssure Assistance)'].map((opt) => (
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Yes', 'Partial', 'Need Help'].map((opt) => (
                           <button
                             type="button"
                             key={opt}
                             onClick={() => updateField('hasContent', opt)}
-                            className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                            className={`py-2 px-2.5 rounded-xl text-xs font-semibold border transition-all ${
                               formData.hasContent === opt
                                 ? 'bg-primary text-white border-primary'
                                 : 'bg-background border-border text-muted-foreground hover:bg-secondary'
@@ -586,15 +627,15 @@ export function ProjectBriefWizard() {
 
                     <div className="space-y-1.5">
                       <label className="text-xs font-bold uppercase tracking-wider text-foreground">
-                        Do you already have a domain?
+                        Do you have a registered domain?
                       </label>
-                      <div className="grid grid-cols-2 gap-2">
-                        {['Yes', 'No (Need Setup Guidance)'].map((opt) => (
+                      <div className="grid grid-cols-3 gap-2">
+                        {['Yes', 'Not Yet', 'Need Guidance'].map((opt) => (
                           <button
                             type="button"
                             key={opt}
                             onClick={() => updateField('hasDomain', opt)}
-                            className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${
+                            className={`py-2 px-2.5 rounded-xl text-xs font-semibold border transition-all ${
                               formData.hasDomain === opt
                                 ? 'bg-primary text-white border-primary'
                                 : 'bg-background border-border text-muted-foreground hover:bg-secondary'
@@ -611,13 +652,13 @@ export function ProjectBriefWizard() {
 
               {/* STEP 6: Review & Submit */}
               {step === 6 && (
-                <div className="space-y-5 animate-in fade-in duration-200">
+                <div className="space-y-4 sm:space-y-5 animate-in fade-in duration-200">
                   <div>
-                    <h3 className="font-serif text-xl sm:text-2xl font-bold text-foreground">Review Your Project Brief</h3>
+                    <h3 className="font-serif text-lg sm:text-2xl font-bold text-foreground">Review Your Project Brief</h3>
                     <p className="text-xs sm:text-sm text-muted-foreground">Confirm your project details before submission.</p>
                   </div>
 
-                  <div className="space-y-2 border border-border rounded-2xl overflow-hidden bg-card/60">
+                  <div className="space-y-1.5 border border-border rounded-2xl overflow-hidden bg-card/60">
                     {[
                       { label: 'Business Name', value: formData.businessName },
                       { label: 'Contact Person', value: formData.yourName },
@@ -630,9 +671,9 @@ export function ProjectBriefWizard() {
                       { label: 'Features Selected', value: formData.keyFeatures.join(', ') },
                       { label: 'Content / Domain', value: `Content: ${formData.hasContent} | Domain: ${formData.hasDomain}` },
                     ].map((row, rIdx) => (
-                      <div key={rIdx} className="flex flex-col sm:flex-row sm:items-center justify-between px-4 py-2.5 border-b border-border/50 last:border-b-0 text-xs gap-1">
+                      <div key={rIdx} className="flex flex-col sm:flex-row sm:items-center justify-between px-3.5 sm:px-4 py-2.5 border-b border-border/50 last:border-b-0 text-xs gap-0.5 sm:gap-1">
                         <span className="font-bold text-muted-foreground uppercase tracking-wider">{row.label}:</span>
-                        <span className="font-medium text-foreground sm:text-right max-w-sm">{row.value}</span>
+                        <span className="font-medium text-foreground sm:text-right max-w-sm break-words">{row.value}</span>
                       </div>
                     ))}
                   </div>
@@ -641,7 +682,7 @@ export function ProjectBriefWizard() {
                     <button
                       type="button"
                       onClick={handleDownloadPDF}
-                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline cursor-pointer"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download Copy (PDF)</span>
@@ -652,16 +693,16 @@ export function ProjectBriefWizard() {
               )}
 
               {/* Wizard Navigation Footer */}
-              <div className="flex items-center justify-between gap-4 mt-8 pt-6 border-t border-border/60">
+              <div className="flex items-center justify-between gap-3 sm:gap-4 mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-border/60">
                 <button
                   type="button"
                   onClick={prevStep}
                   disabled={step === 1}
-                  className={`inline-flex items-center gap-2 px-5 py-3 rounded-xl border border-border text-xs font-semibold transition-all ${
-                    step === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary text-foreground'
+                  className={`inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl border border-border text-xs font-semibold transition-all ${
+                    step === 1 ? 'opacity-40 cursor-not-allowed' : 'hover:bg-secondary text-foreground active:scale-95'
                   }`}
                 >
-                  <ArrowLeft className="w-4 h-4" />
+                  <ArrowLeft className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                   <span>Back</span>
                 </button>
 
@@ -669,17 +710,17 @@ export function ProjectBriefWizard() {
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary hover:bg-blue-600 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-primary/25 transition-all"
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-primary hover:bg-blue-600 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-primary/25 active:scale-95 transition-all cursor-pointer"
                   >
                     <span>Continue</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3.5 sm:w-4 h-3.5 sm:h-4" />
                   </button>
                 ) : (
                   <button
                     type="button"
                     onClick={handleSubmit}
                     disabled={submitting}
-                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-primary/30 hover:shadow-primary/40 transition-all disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-primary/30 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                   >
                     {submitting ? (
                       <span>Submitting Brief...</span>
@@ -695,27 +736,27 @@ export function ProjectBriefWizard() {
             </div>
           ) : (
             /* Success View */
-            <div className="py-10 text-center space-y-5 animate-in zoom-in-95 duration-300">
-              <div className="w-16 h-16 rounded-3xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
-                <CheckCircle2 className="w-8 h-8" />
+            <div className="py-8 sm:py-10 text-center space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-300">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-3xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
+                <CheckCircle2 className="w-7 h-7 sm:w-8 sm:h-8" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+                <h3 className="font-serif text-xl sm:text-3xl font-bold text-foreground">
                   Project Brief Received!
                 </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
                   Thank you, <strong>{formData.yourName}</strong>. Bharathkumar E and the ApexAssure 
                   team will review your requirements and reach out within 24 hours.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-3 sm:pt-4">
                 <a
                   href={`https://wa.me/918220802736?text=Hi%20Bharathkumar,%20I%20just%20submitted%20a%20project%20brief%20for%20${encodeURIComponent(formData.businessName)}!`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-emerald-600/30 transition-all"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs uppercase tracking-wider shadow-md shadow-emerald-600/30 transition-all text-center"
                 >
                   Notify On WhatsApp Direct
                 </a>
@@ -730,7 +771,7 @@ export function ProjectBriefWizard() {
                     setSubmitted(false);
                     setStep(1);
                   }}
-                  className="px-5 py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-xs font-semibold text-foreground transition-all"
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-secondary hover:bg-secondary/80 border border-border text-xs font-semibold text-foreground transition-all cursor-pointer"
                 >
                   Submit Another Brief
                 </button>

@@ -45,7 +45,7 @@ export function FeaturedProduct() {
   ];
 
   return (
-    <section id="featured-product" className="py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-secondary/30 via-background to-secondary/20">
+    <section id="featured-product" className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-gradient-to-b from-secondary/30 via-background to-secondary/20">
       
       {/* Decorative foliage / emerald glow accents */}
       <div className="absolute top-10 right-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -54,20 +54,20 @@ export function FeaturedProduct() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16 space-y-4">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 md:mb-16 space-y-3 sm:space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs font-bold tracking-wide uppercase">
             <Compass className="w-3.5 h-3.5 text-emerald-500" />
             <span>Featured Product by Bharathkumar E</span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+          <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Trip Tools —{' '}
             <span className="bg-gradient-to-r from-emerald-600 via-teal-500 to-primary bg-clip-text text-transparent">
               Travel Companion &amp; Expense Tracker
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-base md:text-lg text-muted-foreground leading-relaxed">
             A real-world, production-ready travel companion web application crafted by Bharathkumar E. 
             Explore tourist spots with direct GPS maps and manage complete trip budgets seamlessly.
           </p>

@@ -114,15 +114,29 @@
   background: rgba(148, 163, 184, 0.7);
 }
 
-/* Safe bottom spacing for mobile floating action dock */
+/* Safe bottom spacing for mobile floating action dock including iOS Home Indicator */
 .mobile-safe-bottom {
-  padding-bottom: clamp(80px, 12vh, 100px);
+  padding-bottom: calc(85px + env(safe-area-inset-bottom, 16px));
 }
 
 @media (min-width: 768px) {
   .mobile-safe-bottom {
     padding-bottom: 0px;
   }
+}
+
+/* Prevent tap highlight flash on mobile */
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide scrollbar for clean swipe carousels */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* ==================================================== */

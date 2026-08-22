@@ -85,11 +85,11 @@ export function CaseStudiesSection() {
   );
 
   return (
-    <section id="case-studies" className="py-20 sm:py-28 relative overflow-hidden bg-background">
+    <section id="case-studies" className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-background">
       {/* Background Accent Gradients */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 sm:space-y-12">
         
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -98,13 +98,13 @@ export function CaseStudiesSection() {
               <Sparkles className="w-3.5 h-3.5" />
               <span>Proven Results &amp; Live Showcase</span>
             </div>
-            <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+            <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
               Engineered for Speed, Built for{' '}
               <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-500 bg-clip-text text-transparent">
                 High Conversions
               </span>
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
+            <p className="text-xs sm:text-base text-muted-foreground">
               Explore live platforms and client websites built by Bharathkumar E. Each project is crafted with sub-second performance, bulletproof security, and user-centric architecture.
             </p>
           </div>
@@ -122,12 +122,12 @@ export function CaseStudiesSection() {
         </div>
 
         {/* Dynamic Category Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none snap-x">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setFilter(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all capitalize ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all capitalize snap-start cursor-pointer ${
                 filter === cat
                   ? 'bg-primary text-white shadow-md shadow-primary/25 scale-105'
                   : 'bg-secondary/70 hover:bg-secondary text-muted-foreground hover:text-foreground border border-border/70'
@@ -139,13 +139,13 @@ export function CaseStudiesSection() {
         </div>
 
         {/* Portfolio Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
           {filteredProjects.map((project) => {
             const isTripTools = project.id.includes('trip') || project.id.includes('munnar');
             return (
               <div
                 key={project.id}
-                className={`glass-panel rounded-3xl p-7 sm:p-8 border transition-all duration-300 flex flex-col justify-between group relative overflow-hidden shadow-xl hover:-translate-y-1 ${
+                className={`glass-panel rounded-3xl p-5 sm:p-7 md:p-8 border transition-all duration-300 flex flex-col justify-between group relative overflow-hidden shadow-xl hover:-translate-y-1 ${
                   project.featured 
                     ? 'border-emerald-500/40 hover:border-emerald-500/70 shadow-emerald-500/5' 
                     : 'border-border hover:border-primary/50'

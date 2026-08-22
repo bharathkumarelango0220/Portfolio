@@ -238,7 +238,7 @@ export function WebsiteAuditLab() {
   };
 
   return (
-    <section id="interactive-lab" className="py-16 md:py-24 relative overflow-hidden bg-secondary/20 border-y border-border/60">
+    <section id="interactive-lab" className="py-12 sm:py-16 md:py-24 relative overflow-hidden bg-secondary/20 border-y border-border/60">
       
       {/* Subtle Glow Background */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-primary/5 rounded-full blur-3xl pointer-events-none -z-10" />
@@ -246,31 +246,31 @@ export function WebsiteAuditLab() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10 space-y-4">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 space-y-3 sm:space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-bold tracking-wide uppercase">
             <Cpu className="w-3.5 h-3.5" />
             <span>Interactive Engineering &amp; Audit Lab</span>
           </div>
 
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
+          <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-foreground">
             Test Your Website Health &amp;{' '}
             <span className="bg-gradient-to-r from-primary via-blue-500 to-indigo-500 bg-clip-text text-transparent">
               Design Your Platform Architecture
             </span>
           </h2>
 
-          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+          <p className="text-xs sm:text-base md:text-lg text-muted-foreground leading-relaxed">
             Run an instant diagnostic audit on any website, or interactively assemble custom web capabilities 
             such as GPS navigation, expense trackers, and PWA engines.
           </p>
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="flex justify-center mb-10">
+        <div className="flex justify-center mb-8 sm:mb-10">
           <div className="flex p-1.5 bg-card rounded-2xl border border-border shadow-sm max-w-md w-full">
             <button
               onClick={() => setActiveMode('audit')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeMode === 'audit'
                   ? 'bg-primary text-white shadow-md shadow-primary/25'
                   : 'text-muted-foreground hover:text-foreground'
@@ -281,21 +281,21 @@ export function WebsiteAuditLab() {
             </button>
             <button
               onClick={() => setActiveMode('blueprint')}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`flex-1 py-2.5 px-3 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
                 activeMode === 'blueprint'
                   ? 'bg-primary text-white shadow-md shadow-primary/25'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <Layers className="w-4 h-4" />
-              <span>Feature Blueprint Builder</span>
+              <span>Feature Blueprint</span>
             </button>
           </div>
         </div>
 
         {/* MODE 1: Website Health & Speed Auditor */}
         {activeMode === 'audit' && (
-          <div className="glass-panel rounded-3xl p-6 sm:p-8 lg:p-10 border border-border shadow-2xl space-y-8 animate-in fade-in duration-300">
+          <div className="glass-panel rounded-3xl p-5 sm:p-8 lg:p-10 border border-border shadow-2xl space-y-6 sm:space-y-8 animate-in fade-in duration-300">
             
             {/* Input Bar */}
             <div className="max-w-2xl mx-auto space-y-3">
@@ -304,16 +304,18 @@ export function WebsiteAuditLab() {
                   <Search className="w-4 h-4 text-muted-foreground absolute left-4 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
+                    inputMode="url"
+                    autoComplete="url"
                     placeholder="Enter any website domain or URL (e.g. yourwebsite.com)"
                     value={auditUrl}
                     onChange={(e) => setAuditUrl(e.target.value)}
-                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-xs sm:text-sm text-foreground"
+                    className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-background border border-border focus:border-primary focus:ring-1 focus:ring-primary outline-none text-base sm:text-sm text-foreground"
                   />
                 </div>
                 <button
                   onClick={() => handleRunAudit()}
                   disabled={isScanning}
-                  className="px-6 py-3.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-primary/25 transition-all flex items-center justify-center gap-2 flex-shrink-0 disabled:opacity-50"
+                  className="px-6 py-3.5 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold text-xs uppercase tracking-wider shadow-md shadow-primary/25 transition-all flex items-center justify-center gap-2 flex-shrink-0 disabled:opacity-50 cursor-pointer active:scale-95"
                 >
                   {isScanning ? (
                     <>
